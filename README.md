@@ -29,34 +29,33 @@ Context reaches 90% → Claude triggers auto-compaction
 
 ## Quick Start
 
-### Option 1: Symlink to Plugins Directory (Recommended for Development)
+### Option 1: One-Line Installer (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/akapug/claudesurf/main/install.sh | bash
+```
+
+This will:
+- Clone the repo to `~/.claude/plugins/claudesurf`
+- Fix paths for the `${CLAUDE_PLUGIN_ROOT}` bug
+- Create default config file
+- Patch your `~/.claude/settings.json` with hooks
+
+### Option 2: Manual Installation
 
 ```bash
 # Clone the repo
-git clone https://github.com/akapug/claudesurf.git
-cd claudesurf
+git clone https://github.com/akapug/claudesurf.git ~/.claude/plugins/claudesurf
+cd ~/.claude/plugins/claudesurf
 
-# Install dependencies and build
-pnpm install
-pnpm build
+# Fix paths (workaround for Claude Code bug #9354)
+sed -i "s|\${CLAUDE_PLUGIN_ROOT}|$(pwd)|g" hooks/hooks.json .mcp.json
 
-# Symlink to your Claude plugins directory
-ln -s "$(pwd)" ~/.claude/plugins/claudesurf
+# Create config
+cp claudesurf.config.json.example claudesurf.config.json
+# Edit claudesurf.config.json with your agentId and teamId
 
-# Verify it's linked
-ls -la ~/.claude/plugins/
-```
-
-### Option 2: Copy to Plugins Directory
-
-```bash
-# Clone and build
-git clone https://github.com/akapug/claudesurf.git
-cd claudesurf
-pnpm install && pnpm build
-
-# Copy to plugins
-cp -r . ~/.claude/plugins/claudesurf
+# Manually add hooks to ~/.claude/settings.json (see Known Issues section)
 ```
 
 ### Option 3: Use with --plugin-dir Flag
@@ -65,6 +64,17 @@ cp -r . ~/.claude/plugins/claudesurf
 # Run Claude with the plugin
 claude --plugin-dir /path/to/claudesurf
 ```
+
+## OpenCode Support
+
+ClaudeSurf also supports [OpenCode](https://opencode.ai) via a native TypeScript plugin:
+
+```bash
+# Copy plugin to OpenCode's auto-load directory
+cp opencode-plugin/index.ts ~/.config/opencode/plugin/claudesurf.ts
+```
+
+See [opencode-plugin/README.md](opencode-plugin/README.md) for full documentation.
 
 ## Configuration
 
@@ -196,6 +206,11 @@ claudesurf/
 │       ├── session-restore.sh
 │       ├── context-monitor.sh
 │       └── session-checkpoint.sh
+├── opencode-plugin/         # OpenCode native plugin
+│   ├── index.ts             # TypeScript plugin source
+│   ├── package.json
+│   └── README.md
+├── install.sh               # One-line installer script
 ├── .mcp.json                # MCP server config (optional)
 ├── src/                     # TypeScript source
 │   ├── config.ts
@@ -346,8 +361,8 @@ sed -i "s|\${CLAUDE_PLUGIN_ROOT}|$(pwd)|g" hooks/hooks.json .mcp.json
 - [ ] Token count estimation (currently uses tool call heuristic)
 - [ ] Semantic memory retrieval (not just last checkpoint)
 - [ ] Memory categorization (decisions, preferences, errors)
-- [ ] OpenCode CLI support (see `docs/OPENCODE-TRANSLATION.md`)
-- [ ] Auto-installer script that patches settings.json
+- [x] OpenCode CLI support (see `opencode-plugin/`)
+- [x] Auto-installer script that patches settings.json
 - [ ] Support for `${CLAUDE_PLUGIN_ROOT}` when Claude Code fixes the bug
 
 ## Contributing
