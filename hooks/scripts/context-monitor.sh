@@ -23,7 +23,7 @@ fi
 # We use a heuristic based on session duration and tool call count
 
 TOOL_COUNT="${CLAUDESURF_TOOL_COUNT:-0}"
-((TOOL_COUNT++))
+TOOL_COUNT=$((TOOL_COUNT + 1))
 echo "{\"toolCount\": $TOOL_COUNT, \"lastCheck\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$STATE_FILE"
 
 # Heuristic: Warn after many tool calls (proxy for context growth)

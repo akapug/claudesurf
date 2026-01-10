@@ -2,7 +2,7 @@
   "mcpServers": {
     "claudesurf-memory": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp-server.js"],
+      "args": ["/home/pug/.claude/plugins/claudesurf/dist/mcp-server.js"],
       "env": {
         "CLAUDESURF_AGENT_ID": "${CLAUDESURF_AGENT_ID}",
         "CLAUDESURF_TEAM_ID": "${CLAUDESURF_TEAM_ID}",

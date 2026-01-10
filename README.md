@@ -270,12 +270,85 @@ bash hooks/scripts/pre-compact-save.sh manual
 | Session resume | Automatic | SessionStart hook |
 | Cross-session context | Retrieved memories | Checkpoint restore |
 
+## Known Issues and Workarounds
+
+### `${CLAUDE_PLUGIN_ROOT}` Variable Expansion (Claude Code Bug)
+
+**Issue:** The `${CLAUDE_PLUGIN_ROOT}` environment variable doesn't expand correctly in all contexts. This is a [known bug in Claude Code](https://github.com/anthropics/claude-code/issues/9354).
+
+**Workaround:** Use absolute paths in `hooks/hooks.json` and `.mcp.json` instead of `${CLAUDE_PLUGIN_ROOT}`:
+
+```json
+// Instead of:
+"command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-restore.sh"
+
+// Use:
+"command": "bash /home/youruser/.claude/plugins/claudesurf/hooks/scripts/session-restore.sh"
+```
+
+A helper script is provided to fix paths automatically:
+```bash
+# Fix all variable references to absolute paths
+sed -i "s|\${CLAUDE_PLUGIN_ROOT}|$(pwd)|g" hooks/hooks.json .mcp.json
+```
+
+### Plugin Hooks Not Loading Automatically
+
+**Issue:** Placing files in `~/.claude/plugins/` doesn't automatically register hooks with Claude Code. The plugin marketplace system is still evolving.
+
+**Workaround:** Merge hooks into your `~/.claude/settings.json` manually:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash /path/to/claudesurf/hooks/scripts/session-restore.sh",
+        "timeout": 30
+      }]
+    }],
+    "PostToolUse": [{
+      "matcher": "*",
+      "hooks": [{
+        "type": "command",
+        "command": "bash /path/to/claudesurf/hooks/scripts/context-monitor.sh",
+        "timeout": 10
+      }]
+    }],
+    "PreCompact": [{
+      "matcher": "auto",
+      "hooks": [{
+        "type": "command",
+        "command": "bash /path/to/claudesurf/hooks/scripts/pre-compact-save.sh auto",
+        "timeout": 60
+      }]
+    }],
+    "Stop": [{
+      "hooks": [{
+        "type": "command",
+        "command": "bash /path/to/claudesurf/hooks/scripts/session-checkpoint.sh",
+        "timeout": 30
+      }]
+    }]
+  }
+}
+```
+
+### Bash Arithmetic with Zero
+
+**Issue:** The expression `((TOOL_COUNT++))` returns exit code 1 when `TOOL_COUNT` is 0 (because 0 is falsy in bash), causing hook failures.
+
+**Fix:** Use `TOOL_COUNT=$((TOOL_COUNT + 1))` instead of `((TOOL_COUNT++))`.
+
 ## Roadmap
 
 - [ ] Token count estimation (currently uses tool call heuristic)
 - [ ] Semantic memory retrieval (not just last checkpoint)
 - [ ] Memory categorization (decisions, preferences, errors)
 - [ ] OpenCode CLI support (see `docs/OPENCODE-TRANSLATION.md`)
+- [ ] Auto-installer script that patches settings.json
+- [ ] Support for `${CLAUDE_PLUGIN_ROOT}` when Claude Code fixes the bug
 
 ## Contributing
 

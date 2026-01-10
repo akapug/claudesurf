@@ -4,7 +4,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-restore.sh",
+          "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/session-restore.sh",
           "timeout": 30
         }
       ]
@@ -16,7 +16,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/context-monitor.sh",
+          "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/context-monitor.sh",
           "timeout": 10
         }
       ]
@@ -28,7 +28,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-compact-save.sh auto",
+          "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/pre-compact-save.sh auto",
           "timeout": 60
         }
       ]
@@ -38,7 +38,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pre-compact-save.sh manual",
+          "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/pre-compact-save.sh manual",
           "timeout": 60
         }
       ]
@@ -49,7 +49,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-checkpoint.sh",
+          "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/session-checkpoint.sh",
           "timeout": 30
         }
       ]

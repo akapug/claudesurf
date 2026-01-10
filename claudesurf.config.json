@@ -1,0 +1,14 @@
+{
+  "agentId": "cto-glue",
+  "teamId": "m57596g091akfcdwzqvk5k0dhn7xfm3e",
+  "apiUrl": "https://glue.elide.work",
+  "hooksDir": ".claude/hooks",
+  "zones": {
+    "hot": 50,
+    "warm": 75,
+    "cold": 90
+  },
+  "maxContextTokens": 200000,
+  "checkIntervalMs": 30000,
+  "enableGroupChatNotifications": true
+}
