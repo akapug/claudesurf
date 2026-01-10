@@ -1,41 +1,175 @@
-# ClaudeSurf
+# ClaudeSurf 🏄
 
-**Windsurf-like memory persistence and context compaction for Claude Code CLI agents.**
+**Windsurf-like memory persistence and context compaction for Claude Code CLI.**
 
-A Claude Code plugin that replicates Windsurf/Cascade's context window management - saving memories BEFORE compaction so agents stay on task across sessions.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-purple.svg)](https://docs.anthropic.com/en/docs/claude-code/plugins)
 
-ClaudeSurf replicates Windsurf/Cascade's effective context window management (40-90% saturation with automatic memory-based compaction) for headless Claude Code CLI agents running in remote containers.
+ClaudeSurf replicates Windsurf/Cascade's effective context window management for Claude Code CLI agents. It saves structured memories **BEFORE** compaction, so agents stay on task across sessions.
 
 ## The Problem
 
-Claude Code CLI's built-in compaction summarizes context when it gets full, but loses important details. Windsurf solves this by saving structured memories BEFORE compaction, then retrieving relevant ones on session start.
+Claude Code CLI's built-in compaction summarizes context when it gets full, but loses important details like:
+- Key architectural decisions
+- File paths being worked on
+- User preferences learned during the session
+- Pending tasks and blockers
 
 ## The Solution
 
-ClaudeSurf provides:
+ClaudeSurf hooks into Claude's compaction lifecycle:
 
-1. **PreCompact Hook** - Saves memory to your backend BEFORE Claude's built-in compaction
-2. **Context Zone Monitoring** - Proactive checkpoints at 75%, emergency saves at 90%
-3. **Session Restore** - Retrieves relevant memories on session start
-4. **Context Preserver Subagent** - Detailed handoff documents for complex sessions
-
-## Installation
-
-### As a Claude Code Plugin (Recommended)
-
-```bash
-# Install from plugin directory
-claude --plugin-dir /path/to/claudesurf
-
-# Or copy to your plugins directory
-cp -r claudesurf ~/.claude/plugins/
+```
+Context reaches 90% → Claude triggers auto-compaction
+                    → ClaudeSurf's PreCompact hook fires FIRST
+                    → Saves structured memory to your backend
+                    → THEN Claude's summarization runs
+                    → Next session: Restores checkpoint automatically
 ```
 
-### As an npm Package
+## Quick Start
+
+### Option 1: Symlink to Plugins Directory (Recommended for Development)
 
 ```bash
-npm install @akapug/claudesurf
-npx claudesurf setup --glue
+# Clone the repo
+git clone https://github.com/akapug/claudesurf.git
+cd claudesurf
+
+# Install dependencies and build
+pnpm install
+pnpm build
+
+# Symlink to your Claude plugins directory
+ln -s "$(pwd)" ~/.claude/plugins/claudesurf
+
+# Verify it's linked
+ls -la ~/.claude/plugins/
+```
+
+### Option 2: Copy to Plugins Directory
+
+```bash
+# Clone and build
+git clone https://github.com/akapug/claudesurf.git
+cd claudesurf
+pnpm install && pnpm build
+
+# Copy to plugins
+cp -r . ~/.claude/plugins/claudesurf
+```
+
+### Option 3: Use with --plugin-dir Flag
+
+```bash
+# Run Claude with the plugin
+claude --plugin-dir /path/to/claudesurf
+```
+
+## Configuration
+
+Create `claudesurf.config.json` in your project root (or use environment variables):
+
+```json
+{
+  "agentId": "my-agent",
+  "teamId": "my-team", 
+  "apiUrl": "https://glue.elide.work",
+  "zones": {
+    "hot": 50,
+    "warm": 75,
+    "cold": 90
+  },
+  "enableGroupChatNotifications": true
+}
+```
+
+Or use environment variables:
+```bash
+export CLAUDESURF_AGENT_ID="my-agent"
+export CLAUDESURF_TEAM_ID="my-team"
+export CLAUDESURF_API_URL="https://glue.elide.work"
+```
+
+## Plugin Components
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/claudesurf:save-memory` | Manually save current context to memory |
+| `/claudesurf:restore-context` | Restore previous session's checkpoint |
+| `/claudesurf:check-context` | Check current context zone status |
+
+### Hooks
+
+| Hook | Event | Purpose |
+|------|-------|---------|
+| `pre-compact-save.sh` | PreCompact | Save memory BEFORE compaction |
+| `session-restore.sh` | SessionStart | Load checkpoint on session start |
+| `context-monitor.sh` | PostToolUse | Monitor context saturation |
+| `session-checkpoint.sh` | Stop | Save state when session ends |
+
+### Skills
+
+The **memory-management** skill auto-activates when you mention:
+- "save memory", "preserve context", "create checkpoint"
+- "remember this", "store for later"
+- Context is getting full
+
+### Agents
+
+The **context-preserver** subagent creates detailed handoff documents when context is critical (>90%).
+
+## Context Zones
+
+| Zone | Token % | Behavior |
+|------|---------|----------|
+| 🟢 **Hot** | 0-50% | Normal operation |
+| 🟡 **Warm** | 50-75% | Consider saving important context |
+| 🟠 **Cold** | 75-90% | Proactive checkpoints triggered |
+| 🔴 **Critical** | 90%+ | Emergency save before compaction |
+
+## Backend Integration
+
+ClaudeSurf works with any backend that implements the checkpoint API:
+
+```typescript
+// Save checkpoint
+POST /api/mcp
+{
+  "tool": "agent-status",
+  "args": {
+    "action": "save-checkpoint",
+    "agentId": "string",
+    "teamId": "string",
+    "conversationSummary": "string",
+    "pendingWork": ["task1", "task2"],
+    "accomplishments": ["done1", "done2"],
+    "filesEdited": ["/path/to/file.ts"]
+  }
+}
+
+// Get checkpoint
+POST /api/mcp
+{
+  "tool": "agent-status", 
+  "args": {
+    "action": "get-checkpoint",
+    "agentId": "string",
+    "teamId": "string"
+  }
+}
+```
+
+### For Glue Users
+
+ClaudeSurf is designed to work with [Glue](https://github.com/akapug/glue) out of the box:
+
+```bash
+# Set your Glue team
+export CLAUDESURF_TEAM_ID="elide"
+export CLAUDESURF_API_URL="https://glue.elide.work"
 ```
 
 ## Plugin Structure
@@ -43,7 +177,7 @@ npx claudesurf setup --glue
 ```
 claudesurf/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest
+│   └── plugin.json          # Plugin manifest (required)
 ├── commands/
 │   ├── save-memory.md       # /claudesurf:save-memory
 │   ├── restore-context.md   # /claudesurf:restore-context
@@ -51,103 +185,110 @@ claudesurf/
 ├── agents/
 │   └── context-preserver.md # Subagent for detailed handoffs
 ├── skills/
-│   └── memory-management/   # Auto-activating skill
-│       └── SKILL.md
+│   └── memory-management/
+│       ├── SKILL.md         # Auto-activating skill
+│       └── references/
+│           └── zone-strategies.md
 ├── hooks/
 │   ├── hooks.json           # Hook configuration
-│   └── scripts/             # Hook implementations
-├── .mcp.json                # MCP server config
-└── src/                     # TypeScript source
+│   └── scripts/
+│       ├── pre-compact-save.sh
+│       ├── session-restore.sh
+│       ├── context-monitor.sh
+│       └── session-checkpoint.sh
+├── .mcp.json                # MCP server config (optional)
+├── src/                     # TypeScript source
+│   ├── config.ts
+│   ├── zones.ts
+│   ├── memory-client.ts
+│   ├── session-manager.ts
+│   └── mcp-server.ts
+├── templates/               # Config templates
+└── docs/
+    └── OPENCODE-TRANSLATION.md
 ```
 
-## Configuration
+## Docker Agent Integration
 
-Create a `claudesurf.config.json` in your project root:
+For Glue's Docker-based agents, add ClaudeSurf to the agent image:
+
+```dockerfile
+# In your agent Dockerfile
+COPY --from=claudesurf /app /opt/claudesurf
+
+# Set environment
+ENV CLAUDESURF_AGENT_ID="${AGENT_ID}"
+ENV CLAUDESURF_TEAM_ID="${TEAM_ID}"
+ENV CLAUDESURF_API_URL="https://glue.elide.work"
+```
+
+Then in your agent's `.claude/settings.json`:
 
 ```json
 {
-  "agentId": "my-agent",
-  "teamId": "my-team",
-  "apiUrl": "https://your-api.com",
-  "zones": {
-    "hot": 50,
-    "warm": 75,
-    "cold": 90
-  },
-  "checkIntervalMs": 120000
+  "hooks": {
+    "PreCompact": [{
+      "matcher": "auto",
+      "hooks": [{
+        "type": "command",
+        "command": "/opt/claudesurf/hooks/scripts/pre-compact-save.sh auto"
+      }]
+    }],
+    "SessionStart": [{
+      "hooks": [{
+        "type": "command", 
+        "command": "/opt/claudesurf/hooks/scripts/session-restore.sh"
+      }]
+    }]
+  }
 }
 ```
 
-## How It Works
-
-```
-Context reaches 90% → CCCLI triggers auto-compaction
-                    → PreCompact hook fires FIRST
-                    → Saves structured memory to API
-                    → Spawns context-preserver subagent
-                    → Posts to team chat for visibility
-                    → THEN Claude's summarization runs
-                    → Next session: Restores checkpoint
-```
-
-## Hooks Provided
-
-| Hook | Event | Purpose |
-|------|-------|---------|
-| `pre-compact-save.sh` | PreCompact | Save memory before compaction |
-| `session-restore.sh` | SessionStart | Load checkpoint and memories |
-| `rolling-compaction-check.sh` | PostToolUse | Monitor context zones |
-| `session-checkpoint.sh` | SessionEnd | Save final state |
-
-## Context Zones
-
-| Zone | Range | Action |
-|------|-------|--------|
-| Hot | 0-50% | No action, full fidelity |
-| Warm | 50-75% | Light monitoring |
-| Cold | 75-90% | Proactive checkpoints |
-| Critical | 90%+ | Emergency save + handoff |
-
-## API Integration
-
-ClaudeSurf expects your backend to implement:
-
-```typescript
-// Save checkpoint
-POST /api/agent-status
-{
-  action: "save-checkpoint",
-  agentId: string,
-  teamId: string,
-  conversationSummary: string,
-  workingOn?: string,
-  filesEdited?: string[],
-  pendingWork?: string[]
-}
-
-// Get checkpoint
-POST /api/agent-status
-{
-  action: "get-checkpoint",
-  agentId: string,
-  teamId: string
-}
-```
-
-## For Glue Users
-
-ClaudeSurf is designed to work with Glue's MCP server out of the box:
+## Development
 
 ```bash
-npx claudesurf setup --glue
+# Install dependencies
+pnpm install
+
+# Build TypeScript
+pnpm build
+
+# Run tests
+pnpm test
+
+# Test hooks manually
+bash hooks/scripts/pre-compact-save.sh manual
 ```
 
-This configures hooks to use Glue's `agent-status` MCP tool.
+## Comparison with Windsurf
 
-## Architecture
+| Feature | Windsurf/Cascade | ClaudeSurf |
+|---------|------------------|------------|
+| Memory persistence | `create_memory` tool | API checkpoint |
+| Auto-compaction | Saves memory first | PreCompact hook |
+| Context monitoring | System shows tokens | Heuristic + hooks |
+| Session resume | Automatic | SessionStart hook |
+| Cross-session context | Retrieved memories | Checkpoint restore |
 
-See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full design document.
+## Roadmap
+
+- [ ] Token count estimation (currently uses tool call heuristic)
+- [ ] Semantic memory retrieval (not just last checkpoint)
+- [ ] Memory categorization (decisions, preferences, errors)
+- [ ] OpenCode CLI support (see `docs/OPENCODE-TRANSLATION.md`)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `pnpm build` to verify
+5. Submit a PR
 
 ## License
 
-MIT
+MIT - See [LICENSE](LICENSE) for details.
+
+## Credits
+
+Built by the [Elide](https://elide.dev) team for use with [Glue](https://github.com/akapug/glue).
