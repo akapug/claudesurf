@@ -1,0 +1,38 @@
+{
+  "name": "@akapug/claudesurf",
+  "version": "0.1.0",
+  "description": "Windsurf-like memory and compaction system for Claude Code CLI agents",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "claudesurf": "./bin/claudesurf.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest",
+    "install-hooks": "tsx src/install-hooks.ts",
+    "setup": "tsx src/setup.ts"
+  },
+  "keywords": [
+    "claude-code",
+    "compaction",
+    "memory",
+    "windsurf",
+    "ai-agents"
+  ],
+  "author": "Elide Team",
+  "license": "MIT",
+  "dependencies": {
+    "convex": "^1.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

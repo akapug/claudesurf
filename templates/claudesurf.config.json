@@ -1,0 +1,16 @@
+{
+  "agentId": "my-agent",
+  "teamId": "my-team",
+  "apiUrl": "https://your-api.com",
+  "zones": {
+    "hot": 50,
+    "warm": 75,
+    "cold": 90
+  },
+  "checkIntervalMs": 120000,
+  "maxContextTokens": 200000,
+  "summarizationModel": "haiku",
+  "enableGroupChatNotifications": true,
+  "enableSubagentHandoff": true,
+  "hooksDir": ".claude/hooks"
+}
