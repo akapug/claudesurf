@@ -1,0 +1,34 @@
+{
+  "name": "claudesurf-opencode",
+  "version": "0.1.0",
+  "description": "Windsurf-like memory persistence for OpenCode - auto-saves context before compaction",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./index.ts --outdir ./dist --target=node",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "memory",
+    "context",
+    "compaction",
+    "windsurf"
+  ],
+  "author": "akapug",
+  "license": "MIT",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "latest",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akapug/claudesurf.git",
+    "directory": "opencode-plugin"
+  }
+}
