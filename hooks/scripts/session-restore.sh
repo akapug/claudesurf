@@ -2,7 +2,7 @@
 # ClaudeSurf: Session Restore Hook
 # Fires on SessionStart to load previous checkpoint
 
-set -euo pipefail
+# Note: NOT using set -e because jq returns non-zero for null/missing fields
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}"
 CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
@@ -23,15 +23,35 @@ if [[ "$AGENT_ID" == "unknown" ]]; then
   exit 0
 fi
 
-# Fetch checkpoint from API
-CHECKPOINT=$(curl -s -X POST "${API_URL}/api/mcp" \
+# Fetch checkpoint from API (JSON-RPC format)
+RESPONSE=$(curl -s --max-time 10 -X POST "${API_URL}/api/mcp" \
   -H "Content-Type: application/json" \
-  -d "{\"tool\":\"agent-status\",\"args\":{\"action\":\"get-checkpoint\",\"agentId\":\"${AGENT_ID}\",\"teamId\":\"${TEAM_ID}\"}}" 2>/dev/null || echo "{}")
+  -d "{
+    \"jsonrpc\": \"2.0\",
+    \"method\": \"tools/call\",
+    \"params\": {
+      \"name\": \"agent-status\",
+      \"arguments\": {
+        \"action\": \"get-checkpoint\",
+        \"agentId\": \"${AGENT_ID}\",
+        \"teamId\": \"${TEAM_ID}\"
+      }
+    },
+    \"id\": 1
+  }" 2>/dev/null || echo "{}")
 
-# Extract checkpoint data
-SUMMARY=$(echo "$CHECKPOINT" | jq -r '.result.conversationSummary // empty' 2>/dev/null || echo "")
-PENDING=$(echo "$CHECKPOINT" | jq -r '.result.pendingWork // [] | join("\n- ")' 2>/dev/null || echo "")
-ACCOMPLISHMENTS=$(echo "$CHECKPOINT" | jq -r '.result.accomplishments // [] | join("\n- ")' 2>/dev/null || echo "")
+# Parse JSON-RPC response - checkpoint is in result.content[0].text as JSON
+CHECKPOINT_JSON=$(echo "$RESPONSE" | jq -r '.result.content[0].text // "{}"' 2>/dev/null || echo "{}")
+
+# Extract checkpoint data from the nested structure
+FOUND=$(echo "$CHECKPOINT_JSON" | jq -r '.found // false' 2>/dev/null || echo "false")
+if [[ "$FOUND" != "true" ]]; then
+  exit 0
+fi
+
+SUMMARY=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.conversationSummary // empty' 2>/dev/null || echo "")
+PENDING=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.pendingWork // [] | join("\n- ")' 2>/dev/null || echo "")
+ACCOMPLISHMENTS=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.accomplishments // [] | join("\n- ")' 2>/dev/null || echo "")
 
 # If we have checkpoint data, output it for Claude to see
 if [[ -n "$SUMMARY" ]]; then
