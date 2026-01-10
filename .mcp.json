@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "claudesurf-memory": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp-server.js"],
+      "env": {
+        "CLAUDESURF_AGENT_ID": "${CLAUDESURF_AGENT_ID}",
+        "CLAUDESURF_TEAM_ID": "${CLAUDESURF_TEAM_ID}",
+        "CLAUDESURF_API_URL": "${CLAUDESURF_API_URL:-https://glue.elide.work}"
+      }
+    }
+  }
+}

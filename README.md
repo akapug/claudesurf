@@ -1,6 +1,8 @@
-# ClaudeSurf 🏄
+# ClaudeSurf
 
-**Windsurf-like memory and compaction system for Claude Code CLI agents**
+**Windsurf-like memory persistence and context compaction for Claude Code CLI agents.**
+
+A Claude Code plugin that replicates Windsurf/Cascade's context window management - saving memories BEFORE compaction so agents stay on task across sessions.
 
 ClaudeSurf replicates Windsurf/Cascade's effective context window management (40-90% saturation with automatic memory-based compaction) for headless Claude Code CLI agents running in remote containers.
 
@@ -17,17 +19,45 @@ ClaudeSurf provides:
 3. **Session Restore** - Retrieves relevant memories on session start
 4. **Context Preserver Subagent** - Detailed handoff documents for complex sessions
 
-## Quick Start
+## Installation
+
+### As a Claude Code Plugin (Recommended)
 
 ```bash
-# Install
+# Install from plugin directory
+claude --plugin-dir /path/to/claudesurf
+
+# Or copy to your plugins directory
+cp -r claudesurf ~/.claude/plugins/
+```
+
+### As an npm Package
+
+```bash
 npm install @akapug/claudesurf
+npx claudesurf setup --glue
+```
 
-# Setup hooks in your project
-npx claudesurf setup
+## Plugin Structure
 
-# Or manually copy hooks
-npx claudesurf install-hooks --target .claude/hooks
+```
+claudesurf/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin manifest
+├── commands/
+│   ├── save-memory.md       # /claudesurf:save-memory
+│   ├── restore-context.md   # /claudesurf:restore-context
+│   └── check-context.md     # /claudesurf:check-context
+├── agents/
+│   └── context-preserver.md # Subagent for detailed handoffs
+├── skills/
+│   └── memory-management/   # Auto-activating skill
+│       └── SKILL.md
+├── hooks/
+│   ├── hooks.json           # Hook configuration
+│   └── scripts/             # Hook implementations
+├── .mcp.json                # MCP server config
+└── src/                     # TypeScript source
 ```
 
 ## Configuration

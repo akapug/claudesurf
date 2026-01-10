@@ -1,0 +1,24 @@
+{
+  "name": "claudesurf",
+  "version": "0.2.0",
+  "description": "Windsurf-like memory persistence and context compaction for Claude Code CLI agents",
+  "author": {
+    "name": "Elide Team",
+    "email": "team@elide.dev",
+    "url": "https://elide.dev"
+  },
+  "homepage": "https://github.com/akapug/claudesurf",
+  "repository": "https://github.com/akapug/claudesurf",
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "compaction",
+    "context-management",
+    "windsurf",
+    "persistence",
+    "session-management",
+    "glue"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}
