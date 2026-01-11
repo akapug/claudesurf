@@ -29,9 +29,22 @@ fi
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# Create checkpoint payload
-# Note: In a real implementation, this would extract context from the session
-# For now, we create a marker that the PreCompact hook fired
+# Load token data from tracker
+SESSION_ID="${CLAUDE_SESSION_ID:-$$}"
+TOKEN_STATE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
+ZONE_STATE="/tmp/claudesurf-zone-${AGENT_ID}.json"
+
+if [[ -f "$TOKEN_STATE" ]]; then
+  TOTAL_TOKENS=$(jq -r '.totalTokens // 0' "$TOKEN_STATE")
+  CONTEXT_PERCENT=$(jq -r '.contextPercent // 0' "$TOKEN_STATE")
+  TOOL_COUNT=$(jq -r '.toolCount // 0' "$TOKEN_STATE")
+else
+  TOTAL_TOKENS=0
+  CONTEXT_PERCENT=0
+  TOOL_COUNT=0
+fi
+
+# Create checkpoint payload with token data
 PAYLOAD=$(cat << EOF
 {
   "tool": "agent-status",
@@ -39,10 +52,11 @@ PAYLOAD=$(cat << EOF
     "action": "save-checkpoint",
     "agentId": "${AGENT_ID}",
     "teamId": "${TEAM_ID}",
-    "conversationSummary": "[PreCompact ${COMPACT_TYPE}] Context saved before compaction at ${TIMESTAMP}",
+    "conversationSummary": "[PreCompact ${COMPACT_TYPE}] Context saved at ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens, ${TOOL_COUNT} tool calls)",
     "workingOn": "Session compacted - context preserved",
     "pendingWork": [],
-    "accomplishments": []
+    "accomplishments": [],
+    "recentContext": "Tokens: ${TOTAL_TOKENS}, Context: ${CONTEXT_PERCENT}%, Tools: ${TOOL_COUNT}"
   }
 }
 EOF
@@ -60,7 +74,7 @@ if [[ "$ENABLE_GROUPCHAT" == "true" ]]; then
   "teamId": "${TEAM_ID}",
   "author": "${AGENT_ID}",
   "authorType": "agent",
-  "message": "🔄 [COMPACTING] Context at ~90% - saving memory before ${COMPACT_TYPE} compaction",
+  "message": "🔄 [COMPACTING] Context at ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens) - saving before ${COMPACT_TYPE} compaction",
   "channel": "dev"
 }
 EOF
@@ -74,5 +88,6 @@ fi
 echo ""
 echo "╔══════════════════════════════════════════════════════════════════╗"
 echo "║  💾 CLAUDESURF: Memory saved before ${COMPACT_TYPE} compaction              ║"
+echo "║  📊 Context: ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens, ${TOOL_COUNT} tool calls)     ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""

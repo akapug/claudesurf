@@ -16,6 +16,11 @@
       "hooks": [
         {
           "type": "command",
+          "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/token-tracker.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
           "command": "bash /home/pug/.claude/plugins/claudesurf/hooks/scripts/context-monitor.sh",
           "timeout": 10
         }

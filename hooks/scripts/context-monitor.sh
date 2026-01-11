@@ -1,38 +1,66 @@
 #!/bin/bash
 # ClaudeSurf: Context Monitor Hook
 # Fires after each tool use to monitor context saturation
-# Lightweight - exits quickly if not in warning zone
-
-set -euo pipefail
+# Reads real token counts from token-tracker if available
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}"
 CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
-STATE_FILE="/tmp/claudesurf-${CLAUDESURF_AGENT_ID:-agent}-state.json"
 
-# Load thresholds from config
+# Load config
 if [[ -f "$CONFIG_FILE" ]]; then
-  WARM_THRESHOLD=$(jq -r '.zones.warm // 75' "$CONFIG_FILE")
-  COLD_THRESHOLD=$(jq -r '.zones.cold // 90' "$CONFIG_FILE")
+  AGENT_ID=$(jq -r '.agentId // "agent"' "$CONFIG_FILE")
+  WARM_THRESHOLD=$(jq -r '.zones.warm // 50' "$CONFIG_FILE")
+  COLD_THRESHOLD=$(jq -r '.zones.cold // 75' "$CONFIG_FILE")
+  CRITICAL_THRESHOLD=$(jq -r '.zones.critical // 90' "$CONFIG_FILE")
 else
-  WARM_THRESHOLD=75
-  COLD_THRESHOLD=90
+  AGENT_ID="${CLAUDESURF_AGENT_ID:-agent}"
+  WARM_THRESHOLD=50
+  COLD_THRESHOLD=75
+  CRITICAL_THRESHOLD=90
 fi
 
-# Try to get context usage from Claude's environment
-# Note: This is a best-effort approach - Claude doesn't expose token counts directly
-# We use a heuristic based on session duration and tool call count
+SESSION_ID="${CLAUDE_SESSION_ID:-$$}"
+TOKEN_STATE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
 
-TOOL_COUNT="${CLAUDESURF_TOOL_COUNT:-0}"
-TOOL_COUNT=$((TOOL_COUNT + 1))
-echo "{\"toolCount\": $TOOL_COUNT, \"lastCheck\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$STATE_FILE"
-
-# Heuristic: Warn after many tool calls (proxy for context growth)
-# Real implementation would use actual token counts if available
-if [[ $TOOL_COUNT -gt 50 ]]; then
-  echo ""
-  echo "⚠️  ClaudeSurf: High tool count ($TOOL_COUNT) - consider saving important context"
-  echo ""
+# Read token state from tracker
+if [[ -f "$TOKEN_STATE" ]]; then
+  TOTAL_TOKENS=$(jq -r '.totalTokens // 0' "$TOKEN_STATE")
+  CONTEXT_PERCENT=$(jq -r '.contextPercent // 0' "$TOKEN_STATE")
+  TOOL_COUNT=$(jq -r '.toolCount // 0' "$TOKEN_STATE")
+  ESTIMATED=$(jq -r '.estimatedFromLength // true' "$TOKEN_STATE")
+else
+  # Fallback to tool count heuristic
+  TOOL_COUNT="${CLAUDESURF_TOOL_COUNT:-0}"
+  TOOL_COUNT=$((TOOL_COUNT + 1))
+  # Rough estimate: 1000 tokens per tool call on average
+  TOTAL_TOKENS=$((TOOL_COUNT * 1000))
+  CONTEXT_PERCENT=$((TOTAL_TOKENS * 100 / 200000))
+  ESTIMATED="true"
 fi
 
-# Export for next invocation
-export CLAUDESURF_TOOL_COUNT=$TOOL_COUNT
+# Determine zone and emit appropriate warning
+ZONE="hot"
+if [[ $CONTEXT_PERCENT -ge $CRITICAL_THRESHOLD ]]; then
+  ZONE="critical"
+  echo ""
+  echo "🔴 ClaudeSurf: CRITICAL context usage (~${CONTEXT_PERCENT}%)"
+  echo "   Compaction imminent - save important context NOW"
+  echo ""
+elif [[ $CONTEXT_PERCENT -ge $COLD_THRESHOLD ]]; then
+  ZONE="cold"
+  echo ""
+  echo "🟠 ClaudeSurf: Context at ~${CONTEXT_PERCENT}% (${TOTAL_TOKENS} tokens)"
+  echo "   Consider saving key decisions and pending work"
+  echo ""
+elif [[ $CONTEXT_PERCENT -ge $WARM_THRESHOLD ]]; then
+  ZONE="warm"
+  # Only warn every 10 tool calls in warm zone
+  if [[ $((TOOL_COUNT % 10)) -eq 0 ]]; then
+    echo ""
+    echo "🟡 ClaudeSurf: Context at ~${CONTEXT_PERCENT}% (${TOOL_COUNT} tool calls)"
+    echo ""
+  fi
+fi
+
+# Write zone info to state file for other hooks
+echo "{\"zone\": \"${ZONE}\", \"contextPercent\": ${CONTEXT_PERCENT}, \"totalTokens\": ${TOTAL_TOKENS}, \"toolCount\": ${TOOL_COUNT}, \"estimated\": ${ESTIMATED}}" > "/tmp/claudesurf-zone-${AGENT_ID}.json"
