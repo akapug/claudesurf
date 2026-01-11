@@ -1,0 +1,9 @@
+{
+  "timestamp": "20260110-225153",
+  "model": "haiku",
+  "control_image": "glue/soul-clone:latest",
+  "test_image": "glue/soul-clone:claudesurf-test",
+  "control_agent_id": "eval-control-20260110-225153",
+  "test_agent_id": "eval-test-20260110-225153",
+  "task_file": "/home/pug/dev/@akapug/glue/agents/docker/eval/brutal-compaction-task.md"
+}

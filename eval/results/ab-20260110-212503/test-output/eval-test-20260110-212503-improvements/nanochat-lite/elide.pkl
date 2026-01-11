@@ -1,0 +1,19 @@
+amends "elide:project.pkl"
+
+name = "nanochat-lite"
+description = "Lightweight real-time chat service with WebSocket-style messaging"
+
+entrypoint {
+  "server.ts"
+}
+
+languages {
+  typescript {
+    enabled = true
+  }
+}
+
+server {
+  port = 8080
+  host = "0.0.0.0"
+}

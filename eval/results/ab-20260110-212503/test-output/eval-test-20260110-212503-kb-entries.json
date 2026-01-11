@@ -1,0 +1,456 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated": "2026-01-11",
+    "elide_version": "beta11-rc1",
+    "total_entries": 55
+  },
+  "entries": [
+    {
+      "id": "core-001",
+      "category": "core",
+      "title": "What is Elide?",
+      "content": "Elide is a polyglot runtime built on GraalVM and the Truffle framework. It enables running JavaScript, TypeScript, Python 3.11, Java (JDK 24), and Kotlin (K2 v2.2.21) in a single unified runtime with zero-serialization cross-language calls.",
+      "tags": ["overview", "introduction", "polyglot"],
+      "related": ["core-002", "core-003"]
+    },
+    {
+      "id": "core-002",
+      "category": "core",
+      "title": "Supported Languages",
+      "content": "Elide supports: JavaScript (ES2020+), TypeScript (runs directly without build), Python 3.11 (via GraalPy), Java (JDK 24), Kotlin (K2 v2.2.21), and WebAssembly (experimental).",
+      "tags": ["languages", "typescript", "python", "java", "kotlin"],
+      "related": ["core-001"]
+    },
+    {
+      "id": "core-003",
+      "category": "core",
+      "title": "GraalVM Foundation",
+      "content": "Elide is built on GraalVM and uses the Truffle language implementation framework. This enables zero-serialization polyglot interop through shared heap and unified garbage collection.",
+      "tags": ["graalvm", "truffle", "architecture"],
+      "related": ["core-001", "polyglot-001"]
+    },
+    {
+      "id": "core-004",
+      "category": "core",
+      "title": "Cold Start Performance",
+      "content": "Elide achieves approximately 10x faster cold starts than Node.js (~20ms vs ~200ms) due to eliminating V8 initialization overhead.",
+      "tags": ["performance", "cold-start", "benchmark"],
+      "related": ["perf-001"]
+    },
+    {
+      "id": "core-005",
+      "category": "core",
+      "title": "HTTP Performance",
+      "content": "Elide achieves ~800K RPS on Linux with native transports (Netty). This is independently verified by TechEmpower benchmarks.",
+      "tags": ["performance", "http", "benchmark", "techempower"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "cli-001",
+      "category": "cli",
+      "title": "Running Scripts",
+      "content": "Use 'elide run <file>' to execute scripts. Supports .ts, .js, .py extensions. Example: elide run server.ts",
+      "tags": ["commands", "run", "scripts"],
+      "related": ["cli-002"]
+    },
+    {
+      "id": "cli-002",
+      "category": "cli",
+      "title": "Starting HTTP Server",
+      "content": "Use 'elide serve <file>' to start an HTTP server. Default port is 8080. Use --port flag for custom port. Example: elide serve server.ts --port 3000",
+      "tags": ["commands", "serve", "http", "server"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "cli-003",
+      "category": "cli",
+      "title": "REPL Mode",
+      "content": "Use 'elide repl' to start an interactive REPL for testing code snippets.",
+      "tags": ["commands", "repl", "interactive"],
+      "related": []
+    },
+    {
+      "id": "cli-004",
+      "category": "cli",
+      "title": "Project Initialization",
+      "content": "Use 'elide init' to create a new Elide project. This creates an elide.pkl configuration file interactively.",
+      "tags": ["commands", "init", "project"],
+      "related": ["config-001"]
+    },
+    {
+      "id": "cli-005",
+      "category": "cli",
+      "title": "Installing Dependencies",
+      "content": "Use 'elide install' to install project dependencies from elide.pkl and package.json. Use 'elide add <package>' to add new dependencies.",
+      "tags": ["commands", "install", "dependencies", "npm"],
+      "related": ["config-002"]
+    },
+    {
+      "id": "cli-006",
+      "category": "cli",
+      "title": "Running Tests",
+      "content": "Use 'elide test' to run tests. Supports --coverage flag for coverage reports, --test-report=xml for XML reports, and --threaded for parallel execution (experimental).",
+      "tags": ["commands", "test", "coverage"],
+      "related": ["test-001"]
+    },
+    {
+      "id": "cli-007",
+      "category": "cli",
+      "title": "Debugging with Inspector",
+      "content": "Use 'elide run --inspect file.ts' to enable Chrome DevTools debugging. Use --inspect:wait to pause until debugger attaches. Use --inspect:port=9229 for custom port.",
+      "tags": ["commands", "debug", "inspector", "devtools"],
+      "related": ["debug-001"]
+    },
+    {
+      "id": "cli-008",
+      "category": "cli",
+      "title": "Java/Kotlin Tools",
+      "content": "Elide embeds JDK tools: 'elide javac' (compile Java), 'elide kotlinc' (compile Kotlin), 'elide jar' (create JARs), 'elide javadoc' (generate docs). Use -- to pass flags to underlying tool.",
+      "tags": ["commands", "java", "kotlin", "javac", "kotlinc"],
+      "related": []
+    },
+    {
+      "id": "cli-009",
+      "category": "cli",
+      "title": "Native Image Building",
+      "content": "Use 'elide native-image -- <options> -o <output> <class>' to build native binaries. Supports PGO with --pgo-instrument and --pgo=<profile>.",
+      "tags": ["commands", "native-image", "build", "graalvm"],
+      "related": ["build-001"]
+    },
+    {
+      "id": "cli-010",
+      "category": "cli",
+      "title": "Container Building",
+      "content": "Use 'elide jib -- build -t <tag>' to build container images using Jib (no Docker daemon required).",
+      "tags": ["commands", "container", "docker", "jib"],
+      "related": ["build-002"]
+    },
+    {
+      "id": "http-001",
+      "category": "http",
+      "title": "Fetch Handler Pattern",
+      "content": "The recommended HTTP pattern in beta11-rc1: 'export default async function fetch(req: Request): Promise<Response> { return new Response(\"OK\"); }'. This is declarative and requires no imports.",
+      "tags": ["http", "fetch", "handler", "beta11"],
+      "related": ["http-002", "http-003"]
+    },
+    {
+      "id": "http-002",
+      "category": "http",
+      "title": "Deprecated Beta10 Shim",
+      "content": "DO NOT USE: 'import { serve } from \"elide/http/server\"'. This is the deprecated beta10 pattern. Migrate to fetch handler for beta11-rc1.",
+      "tags": ["http", "deprecated", "beta10", "migration"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-003",
+      "category": "http",
+      "title": "Node.js HTTP Pattern",
+      "content": "Alternative pattern: 'import { createServer } from \"node:http\"; createServer((req,res)=>{ res.end(\"OK\"); }).listen(8080);'. More imperative, gives more control over server lifecycle.",
+      "tags": ["http", "node", "createServer"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-004",
+      "category": "http",
+      "title": "Returning JSON",
+      "content": "Use Response.json(data) for JSON responses: 'return Response.json({ key: \"value\" });'. This automatically sets Content-Type header.",
+      "tags": ["http", "json", "response"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-005",
+      "category": "http",
+      "title": "Request Body Parsing",
+      "content": "Parse JSON body with: 'const body = await req.json();'. For form data: 'const form = await req.formData();'.",
+      "tags": ["http", "request", "body", "json"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-006",
+      "category": "http",
+      "title": "CORS Headers",
+      "content": "Add CORS headers in response: '{ headers: { \"Access-Control-Allow-Origin\": \"*\", \"Access-Control-Allow-Methods\": \"GET, POST, OPTIONS\" } }'. Handle OPTIONS preflight requests.",
+      "tags": ["http", "cors", "headers"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-007",
+      "category": "http",
+      "title": "Streaming Responses",
+      "content": "Use ReadableStream for streaming: 'const stream = new ReadableStream({ start(c){ c.enqueue(data); c.close(); } }); return new Response(stream);'",
+      "tags": ["http", "streaming", "readablestream"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-008",
+      "category": "http",
+      "title": "HTTP/2 Support",
+      "content": "Elide supports HTTP/2 via ALPN negotiation during TLS handshake. Configure TLS in elide.pkl server block.",
+      "tags": ["http", "http2", "tls", "alpn"],
+      "related": ["config-003"]
+    },
+    {
+      "id": "http-009",
+      "category": "http",
+      "title": "WebSocket Support",
+      "content": "WebSockets supported via Netty/Micronaut. Handle connection upgrades in fetch handler.",
+      "tags": ["http", "websocket", "realtime"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "http-010",
+      "category": "http",
+      "title": "WSGI Support",
+      "content": "Run Flask/Django apps with: 'elide run --wsgi app.py'. Enables Python web frameworks with zero-serialization TypeScript interop.",
+      "tags": ["http", "wsgi", "flask", "django", "python"],
+      "related": ["polyglot-003"]
+    },
+    {
+      "id": "config-001",
+      "category": "config",
+      "title": "elide.pkl File",
+      "content": "Project configuration file using Pkl language. First line must be: 'amends \"elide:project.pkl\"'. Define name, description, entrypoint, dependencies.",
+      "tags": ["config", "pkl", "project"],
+      "related": ["config-002"]
+    },
+    {
+      "id": "config-002",
+      "category": "config",
+      "title": "Dependencies in elide.pkl",
+      "content": "Declare dependencies in elide.pkl. Supports npm, Maven, and PyPI packages. Elide also reads package.json, requirements.txt, and pyproject.toml.",
+      "tags": ["config", "dependencies", "npm", "maven", "pypi"],
+      "related": ["config-001"]
+    },
+    {
+      "id": "config-003",
+      "category": "config",
+      "title": "Server Configuration",
+      "content": "Configure server in elide.pkl: 'server { port = 8080; host = \"0.0.0.0\" }'. TLS config: 'server { tls { certFile = \"cert.pem\"; keyFile = \"key.pem\" } }'",
+      "tags": ["config", "server", "port", "tls"],
+      "related": ["http-008"]
+    },
+    {
+      "id": "config-004",
+      "category": "config",
+      "title": "Kotlin Features",
+      "content": "Enable KotlinX libraries: 'kotlin { features { kotlinx = true } }'. Includes coroutines, datetime, serialization, and HTML libraries.",
+      "tags": ["config", "kotlin", "kotlinx"],
+      "related": []
+    },
+    {
+      "id": "polyglot-001",
+      "category": "polyglot",
+      "title": "Zero-Serialization Interop",
+      "content": "Elide enables cross-language calls with <1ms overhead through Truffle's shared heap. No JSON serialization needed between TypeScript, Python, Java, Kotlin.",
+      "tags": ["polyglot", "interop", "performance"],
+      "related": ["core-003"]
+    },
+    {
+      "id": "polyglot-002",
+      "category": "polyglot",
+      "title": "Importing Python",
+      "content": "Import Python modules directly: 'import calculator from \"./calculator.py\"; const result = calculator.add(5, 3);'",
+      "tags": ["polyglot", "python", "import"],
+      "related": ["polyglot-001"]
+    },
+    {
+      "id": "polyglot-003",
+      "category": "polyglot",
+      "title": "Flask + TypeScript",
+      "content": "Combine Flask backend with TypeScript orchestration using --wsgi flag. Flask routes handle Python logic, TypeScript handles API composition.",
+      "tags": ["polyglot", "flask", "typescript", "wsgi"],
+      "related": ["http-010"]
+    },
+    {
+      "id": "polyglot-004",
+      "category": "polyglot",
+      "title": "Importing Java",
+      "content": "Use Java classes: 'const HashMap = Java.type(\"java.util.HashMap\"); const map = new HashMap();'",
+      "tags": ["polyglot", "java", "import"],
+      "related": ["polyglot-001"]
+    },
+    {
+      "id": "polyglot-005",
+      "category": "polyglot",
+      "title": "Node.js Module Imports",
+      "content": "Use node: prefix for Node.js built-ins: 'import { readFileSync } from \"node:fs\"; import { join } from \"node:path\";'",
+      "tags": ["polyglot", "node", "import", "prefix"],
+      "related": []
+    },
+    {
+      "id": "trouble-001",
+      "category": "troubleshooting",
+      "title": "Beta10 Shim Migration",
+      "content": "If using 'import { serve } from \"elide/http/server\"', migrate to fetch handler pattern. Remove shim import, export default async function fetch.",
+      "tags": ["troubleshooting", "migration", "beta10", "beta11"],
+      "related": ["http-002"]
+    },
+    {
+      "id": "trouble-002",
+      "category": "troubleshooting",
+      "title": "Console.log at Top Level",
+      "content": "Avoid console.log at module top level in fetch handlers. Move inside the fetch function to prevent module evaluation issues.",
+      "tags": ["troubleshooting", "console", "fetch"],
+      "related": ["http-001"]
+    },
+    {
+      "id": "trouble-003",
+      "category": "troubleshooting",
+      "title": "Missing node: Prefix",
+      "content": "If imports fail for Node.js modules, add 'node:' prefix. Example: 'import { readFileSync } from \"node:fs\"' instead of 'import fs from \"fs\"'",
+      "tags": ["troubleshooting", "import", "node", "prefix"],
+      "related": ["polyglot-005"]
+    },
+    {
+      "id": "trouble-004",
+      "category": "troubleshooting",
+      "title": "React Version",
+      "content": "Use React 18, not React 19. Install with: 'elide add react@18 react-dom@18'",
+      "tags": ["troubleshooting", "react", "version"],
+      "related": []
+    },
+    {
+      "id": "trouble-005",
+      "category": "troubleshooting",
+      "title": "WSGI Not Working",
+      "content": "For Flask/Django, ensure using --wsgi flag: 'elide run --wsgi app.py'. Verify Flask app is defined correctly with 'app = Flask(__name__)'.",
+      "tags": ["troubleshooting", "wsgi", "flask"],
+      "related": ["http-010"]
+    },
+    {
+      "id": "trouble-006",
+      "category": "troubleshooting",
+      "title": "Port Already in Use",
+      "content": "If default port 8080 is busy, use --port flag: 'elide serve server.ts --port 3000'. Or change in elide.pkl server configuration.",
+      "tags": ["troubleshooting", "port", "server"],
+      "related": ["cli-002"]
+    },
+    {
+      "id": "trouble-007",
+      "category": "troubleshooting",
+      "title": "Missing elide.pkl",
+      "content": "Create elide.pkl with: 'amends \"elide:project.pkl\"' as first line. Add name, description, and entrypoint.",
+      "tags": ["troubleshooting", "config", "pkl"],
+      "related": ["config-001"]
+    },
+    {
+      "id": "trouble-008",
+      "category": "troubleshooting",
+      "title": "process.argv Quirk",
+      "content": "process.argv may return Java array representation. For CLI detection, use: 'if (import.meta.url.includes(\"script-name.ts\"))' instead.",
+      "tags": ["troubleshooting", "cli", "argv"],
+      "related": []
+    },
+    {
+      "id": "perf-001",
+      "category": "performance",
+      "title": "Performance Characteristics",
+      "content": "Cold start: ~20ms (10x faster than Node). RPS: ~800K on Linux. Memory: No V8 init overhead. Cross-language: <1ms overhead.",
+      "tags": ["performance", "benchmark"],
+      "related": ["core-004", "core-005"]
+    },
+    {
+      "id": "perf-002",
+      "category": "performance",
+      "title": "Native Image Benefits",
+      "content": "Native image compilation provides faster cold starts and smaller binaries. Use PGO for additional 20-30% performance improvement.",
+      "tags": ["performance", "native-image", "pgo"],
+      "related": ["cli-009"]
+    },
+    {
+      "id": "test-001",
+      "category": "testing",
+      "title": "Test Commands",
+      "content": "Basic: 'elide test'. With coverage: 'elide test --coverage --coverage-format=json'. With report: 'elide test --test-report=xml'. Parallel: 'elide test --threaded --threads=4'",
+      "tags": ["testing", "coverage", "commands"],
+      "related": ["cli-006"]
+    },
+    {
+      "id": "test-002",
+      "category": "testing",
+      "title": "Test Filtering",
+      "content": "Filter tests by pattern: 'elide test --filter=\"pattern\"'. Set timeout: 'elide test --timeout=5000'",
+      "tags": ["testing", "filter", "timeout"],
+      "related": ["test-001"]
+    },
+    {
+      "id": "build-001",
+      "category": "build",
+      "title": "Native Image Build",
+      "content": "Build optimized native: 'elide native-image -- -O3 --no-fallback -o myapp MyClass'. For PGO: first build with --pgo-instrument, run to generate profile, rebuild with --pgo=default.iprof",
+      "tags": ["build", "native-image", "optimization"],
+      "related": ["cli-009"]
+    },
+    {
+      "id": "build-002",
+      "category": "build",
+      "title": "Container Build",
+      "content": "Build with Jib: 'elide jib -- build -t myapp:latest'. Custom base: 'elide jib -- build --from=gcr.io/distroless/base -t myapp'",
+      "tags": ["build", "container", "jib", "docker"],
+      "related": ["cli-010"]
+    },
+    {
+      "id": "debug-001",
+      "category": "debug",
+      "title": "Chrome DevTools",
+      "content": "Enable inspector: 'elide run --inspect file.ts'. Wait for attach: '--inspect:wait'. Custom port: '--inspect:port=9229'. Open chrome://inspect in Chrome.",
+      "tags": ["debug", "inspector", "devtools"],
+      "related": ["cli-007"]
+    },
+    {
+      "id": "security-001",
+      "category": "security",
+      "title": "I/O Permissions",
+      "content": "Grant file I/O: '--host:allow-io'. Read-only: '--host:allow-io=/path:ro'. Write-only: '--host:allow-io=/path:wo'. Multiple paths: use flag multiple times.",
+      "tags": ["security", "permissions", "io"],
+      "related": []
+    },
+    {
+      "id": "security-002",
+      "category": "security",
+      "title": "Secrets Management",
+      "content": "Set secrets: 'elide secrets set API_KEY value'. Access in code via environment variables or Elide secrets API.",
+      "tags": ["security", "secrets", "environment"],
+      "related": []
+    },
+    {
+      "id": "showcase-001",
+      "category": "showcase",
+      "title": "LLM Inference Server",
+      "content": "Production-ready OpenAI-compatible API with streaming, batch processing, rate limiting, and billing. Uses fetch handler pattern.",
+      "tags": ["showcase", "llm", "ai", "api"],
+      "related": []
+    },
+    {
+      "id": "showcase-002",
+      "category": "showcase",
+      "title": "Flask-TypeScript Polyglot",
+      "content": "Demonstrates combining Flask (Python) with TypeScript orchestration. Shows zero-serialization interop between languages.",
+      "tags": ["showcase", "flask", "polyglot"],
+      "related": ["polyglot-003"]
+    },
+    {
+      "id": "showcase-003",
+      "category": "showcase",
+      "title": "Service Mesh",
+      "content": "Microservices architecture with load balancing, circuit breakers, and distributed tracing. Uses Elide's native HTTP server.",
+      "tags": ["showcase", "microservices", "service-mesh"],
+      "related": []
+    }
+  ],
+  "categories": [
+    {"id": "core", "name": "Core Concepts", "description": "Fundamental Elide concepts and architecture"},
+    {"id": "cli", "name": "CLI Commands", "description": "Command-line interface reference"},
+    {"id": "http", "name": "HTTP & Servers", "description": "HTTP server patterns and configuration"},
+    {"id": "config", "name": "Configuration", "description": "Project configuration and elide.pkl"},
+    {"id": "polyglot", "name": "Polyglot", "description": "Cross-language interoperability"},
+    {"id": "troubleshooting", "name": "Troubleshooting", "description": "Common issues and solutions"},
+    {"id": "performance", "name": "Performance", "description": "Optimization and benchmarks"},
+    {"id": "testing", "name": "Testing", "description": "Test commands and coverage"},
+    {"id": "build", "name": "Build", "description": "Building native images and containers"},
+    {"id": "debug", "name": "Debugging", "description": "Debugging tools and techniques"},
+    {"id": "security", "name": "Security", "description": "Permissions and secrets"},
+    {"id": "showcase", "name": "Showcases", "description": "Example applications"}
+  ]
+}

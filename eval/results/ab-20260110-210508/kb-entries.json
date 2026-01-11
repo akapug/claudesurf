@@ -1,0 +1,290 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generated": "2026-01-11",
+    "source": "Elide Expert Research",
+    "categories": ["runtime", "commands", "patterns", "troubleshooting", "polyglot", "http", "configuration"]
+  },
+  "entries": [
+    {
+      "id": "elide-overview",
+      "category": "runtime",
+      "title": "What is Elide?",
+      "content": "Elide is a polyglot runtime built on GraalVM 25.0.0 and Truffle that executes JavaScript, TypeScript, Python 3.11, Java JDK 24, Kotlin K2 v2.2.21, Ruby, WebAssembly, and LLVM in a unified environment with zero-serialization cross-language interoperability.",
+      "keywords": ["elide", "polyglot", "graalvm", "truffle", "runtime"],
+      "related": ["elide-performance", "elide-languages"]
+    },
+    {
+      "id": "elide-performance",
+      "category": "runtime",
+      "title": "Elide Performance Characteristics",
+      "content": "Elide achieves approximately 800,000 RPS on Linux with cold start times of ~20ms in native mode (compared to Node.js at ~200ms). Cross-language calls have sub-millisecond overhead due to shared heap and unified GC.",
+      "keywords": ["performance", "rps", "cold start", "benchmark"],
+      "related": ["elide-native-image", "elide-overview"]
+    },
+    {
+      "id": "elide-languages",
+      "category": "runtime",
+      "title": "Supported Languages",
+      "content": "Elide supports: JavaScript (ES2022+), TypeScript (transpiled), Python 3.11 (GraalPy), Java JDK 24, Kotlin K2 v2.2.21, Ruby, WebAssembly (WASM), and LLVM bitcode. Enable with flags: --js, --python, --jvm, --ruby, --wasm.",
+      "keywords": ["languages", "javascript", "python", "java", "kotlin", "ruby", "wasm"],
+      "related": ["elide-overview", "polyglot-import"]
+    },
+    {
+      "id": "cmd-elide-run",
+      "category": "commands",
+      "title": "elide run",
+      "content": "Execute a script in any supported language. Usage: `elide run <script>`. Supports JS/TS/Python/etc. Add language flags if needed: `elide run --python script.py`.",
+      "keywords": ["run", "execute", "script", "command"],
+      "related": ["cmd-elide-serve", "cmd-elide-repl"]
+    },
+    {
+      "id": "cmd-elide-serve",
+      "category": "commands",
+      "title": "elide serve",
+      "content": "Start HTTP server with optional hot reload. Usage: `elide serve [script]`. Add --watch for development. Supports --http2, --http3, --tls flags.",
+      "keywords": ["serve", "server", "http", "watch", "command"],
+      "related": ["fetch-handler-pattern", "http-configuration"]
+    },
+    {
+      "id": "cmd-elide-repl",
+      "category": "commands",
+      "title": "elide repl",
+      "content": "Start interactive REPL for any language. Usage: `elide repl [language]`. Examples: `elide repl --js`, `elide repl --python`. Useful for testing polyglot interop.",
+      "keywords": ["repl", "interactive", "command"],
+      "related": ["cmd-elide-run"]
+    },
+    {
+      "id": "cmd-elide-init",
+      "category": "commands",
+      "title": "elide init",
+      "content": "Initialize new Elide project. Usage: `elide init [template]`. Creates elide.pkl manifest and basic project structure. Templates available for different use cases.",
+      "keywords": ["init", "initialize", "project", "template", "command"],
+      "related": ["elide-pkl-config"]
+    },
+    {
+      "id": "cmd-elide-install",
+      "category": "commands",
+      "title": "elide install",
+      "content": "Install dependencies from package.json and elide.pkl. Usage: `elide install`. Handles both npm and pip dependencies defined in project manifest.",
+      "keywords": ["install", "dependencies", "npm", "pip", "command"],
+      "related": ["cmd-elide-add"]
+    },
+    {
+      "id": "cmd-elide-add",
+      "category": "commands",
+      "title": "elide add",
+      "content": "Add dependencies. Usage: `elide add <package>` for npm, `elide add --pip <package>` for Python. Updates elide.pkl and installs package.",
+      "keywords": ["add", "package", "dependency", "npm", "pip", "command"],
+      "related": ["cmd-elide-install"]
+    },
+    {
+      "id": "cmd-elide-build",
+      "category": "commands",
+      "title": "elide build",
+      "content": "Build project for production. Usage: `elide build`. Add --native for GraalVM native-image. Creates optimized binaries.",
+      "keywords": ["build", "compile", "production", "command"],
+      "related": ["elide-native-image"]
+    },
+    {
+      "id": "cmd-elide-test",
+      "category": "commands",
+      "title": "elide test",
+      "content": "Run project tests. Usage: `elide test`. Supports --watch for development, --coverage for reports. Runs tests defined in test files.",
+      "keywords": ["test", "testing", "coverage", "watch", "command"],
+      "related": ["cmd-elide-build"]
+    },
+    {
+      "id": "elide-native-image",
+      "category": "commands",
+      "title": "elide native-image",
+      "content": "Build GraalVM native-image binary. Usage: `elide native-image` or `elide build --native`. Produces standalone binary with ~20ms cold start. Recommended for production.",
+      "keywords": ["native-image", "graalvm", "binary", "production", "command"],
+      "related": ["elide-performance", "cmd-elide-build"]
+    },
+    {
+      "id": "fetch-handler-pattern",
+      "category": "patterns",
+      "title": "Fetch Handler Pattern (Beta11-rc1)",
+      "content": "The standard HTTP handler pattern for Elide beta11-rc1. Export a default function named 'fetch' that takes a Request and returns a Response: `export default async function fetch(req: Request): Promise<Response> { ... }`. Alternative: `export default { fetch: handlerFn }`.",
+      "keywords": ["fetch", "handler", "http", "request", "response", "pattern", "beta11"],
+      "related": ["http-request-object", "http-response-object"]
+    },
+    {
+      "id": "http-request-object",
+      "category": "http",
+      "title": "Request Object API",
+      "content": "The Request object in fetch handlers provides: req.url (string), req.method (string), req.headers (Headers), req.json() (Promise), req.text() (Promise), req.arrayBuffer() (Promise). Parse URL with `new URL(req.url)`.",
+      "keywords": ["request", "http", "url", "method", "headers", "body"],
+      "related": ["fetch-handler-pattern", "http-response-object"]
+    },
+    {
+      "id": "http-response-object",
+      "category": "http",
+      "title": "Response Object API",
+      "content": "Response constructors: `new Response(body, options)`, `Response.json(data, options)`, `Response.redirect(url, status)`. Options include status (number), headers (object/Headers). Body can be string, ArrayBuffer, or ReadableStream.",
+      "keywords": ["response", "http", "json", "status", "headers"],
+      "related": ["fetch-handler-pattern", "http-request-object"]
+    },
+    {
+      "id": "http-configuration",
+      "category": "http",
+      "title": "HTTP Server Configuration",
+      "content": "Configure HTTP server via CLI flags or elide.pkl. Flags: --http2, --http3, --tls, --cert, --key, --port. HTTP/2+ requires TLS. Default port 8080. In elide.pkl: server { port = 8080; http2 = true }.",
+      "keywords": ["http", "http2", "http3", "tls", "port", "configuration"],
+      "related": ["cmd-elide-serve", "elide-pkl-config"]
+    },
+    {
+      "id": "polyglot-import",
+      "category": "polyglot",
+      "title": "Polyglot Import Syntax",
+      "content": "Import other languages using elide: protocol. TypeScript: `import python from 'elide:python'`, `import java from 'elide:java'`. Then: `python.import('numpy')`, `java.type('java.util.UUID')`.",
+      "keywords": ["polyglot", "import", "python", "java", "interop"],
+      "related": ["polyglot-python", "polyglot-java"]
+    },
+    {
+      "id": "polyglot-python",
+      "category": "polyglot",
+      "title": "Python Interop from TypeScript",
+      "content": "Access Python from TypeScript: `import python from 'elide:python'; const np = python.import('numpy'); const arr = np.array([1,2,3]); const mean = np.mean(arr);`. Objects pass by reference with zero serialization.",
+      "keywords": ["python", "numpy", "interop", "polyglot"],
+      "related": ["polyglot-import", "elide-languages"]
+    },
+    {
+      "id": "polyglot-java",
+      "category": "polyglot",
+      "title": "Java Interop from TypeScript",
+      "content": "Access Java from TypeScript: `import java from 'elide:java'; const ArrayList = java.type('java.util.ArrayList'); const list = new ArrayList(); list.add('item');`. Full JDK 24 API available.",
+      "keywords": ["java", "jvm", "interop", "polyglot"],
+      "related": ["polyglot-import", "elide-languages"]
+    },
+    {
+      "id": "elide-pkl-config",
+      "category": "configuration",
+      "title": "elide.pkl Project Configuration",
+      "content": "Projects are configured using Apple's Pkl language. Key sections: name, version, runtime { languages, vm }, server { entrypoint, port, http2 }, dependencies { npm, pip }. Amend base: `amends 'elide:project'`.",
+      "keywords": ["pkl", "configuration", "manifest", "project"],
+      "related": ["cmd-elide-init", "http-configuration"]
+    },
+    {
+      "id": "error-language-unavailable",
+      "category": "troubleshooting",
+      "title": "Error: Language 'X' is not available",
+      "content": "This error occurs when trying to use a language without enabling its engine. Fix: Add flag (--python, --jvm, etc.) or configure in elide.pkl: `runtime { languages = new { 'js'; 'python' } }`.",
+      "keywords": ["error", "language", "unavailable", "troubleshooting"],
+      "related": ["elide-languages", "elide-pkl-config"]
+    },
+    {
+      "id": "error-module-not-found",
+      "category": "troubleshooting",
+      "title": "Error: Cannot find module 'elide:python'",
+      "content": "This error indicates wrong import syntax. Correct: `import python from 'elide:python'`. Wrong: `import { python } from 'elide'`. Ensure you're using the elide: protocol prefix.",
+      "keywords": ["error", "module", "import", "troubleshooting"],
+      "related": ["polyglot-import"]
+    },
+    {
+      "id": "error-fetch-not-detected",
+      "category": "troubleshooting",
+      "title": "Fetch handler not detected (404 on all routes)",
+      "content": "Server returns 404 for all requests when fetch handler export is incorrect. Must be: `export default async function fetch(req)` or `export default { fetch: handler }`. Named exports like `export function handleRequest` won't work.",
+      "keywords": ["error", "fetch", "404", "handler", "troubleshooting"],
+      "related": ["fetch-handler-pattern"]
+    },
+    {
+      "id": "error-http2-tls",
+      "category": "troubleshooting",
+      "title": "HTTP/2 or HTTP/3 not working",
+      "content": "HTTP/2+ requires TLS. Server falls back to HTTP/1.1 without TLS. Fix: `elide serve --http2 --tls --cert=cert.pem --key=key.pem`. Generate dev cert with openssl or mkcert.",
+      "keywords": ["error", "http2", "http3", "tls", "troubleshooting"],
+      "related": ["http-configuration"]
+    },
+    {
+      "id": "error-slow-startup",
+      "category": "troubleshooting",
+      "title": "Slow first request (cold start)",
+      "content": "First request is slow due to JIT compilation. JVM mode: ~200ms, native mode: ~20ms. For production, use native-image build: `elide build --native`. JIT warms up after first requests.",
+      "keywords": ["error", "slow", "cold start", "performance", "troubleshooting"],
+      "related": ["elide-performance", "elide-native-image"]
+    },
+    {
+      "id": "error-sqlite-native",
+      "category": "troubleshooting",
+      "title": "SQLite not available in native mode",
+      "content": "SQLite requires JVM mode due to native library dependencies. Fix: Use `--vm=jvm` or switch to external database (PostgreSQL, MySQL). Alternative: embedded key-value stores that work in native mode.",
+      "keywords": ["error", "sqlite", "native", "database", "troubleshooting"],
+      "related": ["elide-native-image"]
+    },
+    {
+      "id": "whiplash-overview",
+      "category": "runtime",
+      "title": "Whiplash (Elide 2.0)",
+      "content": "Whiplash is Elide 2.0, a complete rewrite in Rust. Uses V8 instead of GraalJS, Cap'n Proto instead of Protobuf. Target: sub-10ms cold start. Maintains Fetch Handler API compatibility with Elide 1.x.",
+      "keywords": ["whiplash", "elide 2.0", "rust", "v8"],
+      "related": ["elide-overview", "whiplash-crates"]
+    },
+    {
+      "id": "whiplash-crates",
+      "category": "runtime",
+      "title": "Whiplash Crate Architecture",
+      "content": "Whiplash workspace structure: elide-core (foundation types), elide-js (V8 via rusty_v8), elide-http (hyper + tokio), elide-rpc (Cap'n Proto), elide-runtime (orchestration). All crates use Rust 2021 edition.",
+      "keywords": ["whiplash", "crates", "rust", "architecture"],
+      "related": ["whiplash-overview"]
+    },
+    {
+      "id": "health-check-pattern",
+      "category": "patterns",
+      "title": "Health Check Endpoints",
+      "content": "Add health check endpoints for production: `/health` or `/healthz` for liveness, `/ready` for readiness. Pattern: `if (url.pathname === '/health') return Response.json({ status: 'healthy', timestamp: Date.now() })`.",
+      "keywords": ["health", "healthz", "ready", "liveness", "readiness", "pattern"],
+      "related": ["fetch-handler-pattern"]
+    },
+    {
+      "id": "cors-pattern",
+      "category": "patterns",
+      "title": "CORS Headers Pattern",
+      "content": "Add CORS for browser clients: Set Access-Control-Allow-Origin, Methods, Headers. Handle OPTIONS preflight: `if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders })`.",
+      "keywords": ["cors", "headers", "browser", "pattern"],
+      "related": ["fetch-handler-pattern", "http-response-object"]
+    },
+    {
+      "id": "error-handling-pattern",
+      "category": "patterns",
+      "title": "Error Handling in Fetch Handlers",
+      "content": "Wrap handler logic in try/catch: `try { ... } catch (error) { console.error(error); return Response.json({ error: 'Internal Server Error' }, { status: 500 }); }`. Log errors for debugging.",
+      "keywords": ["error", "try", "catch", "handler", "pattern"],
+      "related": ["fetch-handler-pattern"]
+    },
+    {
+      "id": "vm-modes",
+      "category": "runtime",
+      "title": "VM Execution Modes",
+      "content": "Elide supports two VM modes: native (GraalVM native-image, ~20ms start, production) and JVM (~200ms start, more features like SQLite). Select with --vm=native or --vm=jvm. Configure in elide.pkl: runtime { vm = 'native' }.",
+      "keywords": ["vm", "native", "jvm", "mode", "runtime"],
+      "related": ["elide-native-image", "elide-performance"]
+    },
+    {
+      "id": "testing-commands",
+      "category": "commands",
+      "title": "Testing Commands",
+      "content": "Run tests: `elide test`. Options: `--watch` for dev mode, `--coverage` for reports, specific file: `elide test tests/api.test.ts`. Uses built-in test runner with describe/it/expect API.",
+      "keywords": ["test", "testing", "watch", "coverage", "command"],
+      "related": ["cmd-elide-test"]
+    },
+    {
+      "id": "debugging-tips",
+      "category": "troubleshooting",
+      "title": "Debugging Elide Applications",
+      "content": "Debug tips: 1) Add console.log(req.method, req.url) in handler, 2) Use --vm=jvm for more detailed errors, 3) Enable JIT tracing with --engine.TraceCompilation, 4) Check elide.pkl syntax, 5) Verify language engines enabled.",
+      "keywords": ["debug", "debugging", "logging", "troubleshooting"],
+      "related": ["error-fetch-not-detected"]
+    },
+    {
+      "id": "showcase-status",
+      "category": "runtime",
+      "title": "Elide Showcases",
+      "content": "Showcase repository demonstrates Elide patterns: hello-world (basic), llm-inference-server, multi-tenant-saas, api-gateway-advanced, rag-service, circuit-breaker-polyglot. Most need elide.pkl manifests added. All should use Fetch Handler pattern.",
+      "keywords": ["showcase", "examples", "demos"],
+      "related": ["fetch-handler-pattern"]
+    }
+  ]
+}

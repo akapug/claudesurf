@@ -1,0 +1,22 @@
+amends "elide:project.pkl"
+
+name = "access-control-service"
+description = "Enterprise RBAC and ABAC access control service with policy engine and audit logging"
+
+entrypoint {
+  "server.ts"
+}
+
+// Language configuration
+languages {
+  typescript {
+    enabled = true
+    strict = true
+  }
+}
+
+// Server configuration
+server {
+  port = 8080
+  host = "0.0.0.0"
+}

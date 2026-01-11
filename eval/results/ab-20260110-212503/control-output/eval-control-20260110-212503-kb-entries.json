@@ -1,0 +1,147 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-11T00:00:00Z",
+  "agent": "eval-control-20260110-212503",
+  "entries": [
+    {
+      "id": "elide-overview",
+      "category": "core",
+      "title": "Elide Runtime Overview",
+      "content": "Elide is a high-performance polyglot runtime built on GraalVM 25.0.0 and the Truffle framework. It supports JavaScript, TypeScript, Python 3.11, Java JDK 24, Kotlin K2 v2.2.21, Ruby, WebAssembly, and LLVM. Key performance characteristics: ~20ms cold start (10x faster than Node.js), ~800K RPS on Linux, zero-serialization cross-language calls with <1ms overhead.",
+      "tags": ["runtime", "graalvm", "polyglot", "performance"]
+    },
+    {
+      "id": "elide-http-pattern",
+      "category": "http",
+      "title": "Elide Fetch Handler Pattern",
+      "content": "The recommended HTTP pattern in Elide Beta11-rc1 is the Fetch Handler: export default async function fetch(req: Request): Promise<Response>. This pattern requires no imports and is native to the Elide runtime. The HTTP stack uses Netty for I/O and Micronaut for protocol handling.",
+      "tags": ["http", "server", "fetch", "beta11"]
+    },
+    {
+      "id": "elide-pkl-config",
+      "category": "configuration",
+      "title": "Elide Project Configuration",
+      "content": "Elide uses the Pkl language for type-safe project configuration via elide.pkl files. Basic structure: amends 'elide:project.pkl', name, description, entrypoint block, and dependencies block supporting npm, maven, and pypi packages.",
+      "tags": ["pkl", "configuration", "dependencies", "project"]
+    },
+    {
+      "id": "elide-cli-commands",
+      "category": "cli",
+      "title": "Essential Elide CLI Commands",
+      "content": "Core commands: elide run <script> (run script), elide serve --port N (start HTTP server), elide repl (interactive REPL), elide init (initialize project), elide install (install dependencies), elide add <package> (add dependency), elide build (build project), elide test (run tests). Advanced: elide native-image, elide mcp, elide lsp.",
+      "tags": ["cli", "commands", "development"]
+    },
+    {
+      "id": "elide-polyglot-python",
+      "category": "polyglot",
+      "title": "Python Integration in Elide",
+      "content": "Elide supports Python 3.11 with zero-copy interop. Import Python modules with: const module = await import('module_name'). Python code runs on the same heap as JavaScript, enabling efficient data sharing without serialization.",
+      "tags": ["polyglot", "python", "interop"]
+    },
+    {
+      "id": "elide-polyglot-java",
+      "category": "polyglot",
+      "title": "Java Integration in Elide",
+      "content": "Access Java classes from TypeScript using: const ClassName = Java.type('fully.qualified.ClassName'). Elide runs on GraalVM with JDK 24 support. Java objects are accessed directly on the shared heap without serialization overhead.",
+      "tags": ["polyglot", "java", "jdk", "interop"]
+    },
+    {
+      "id": "elide-whiplash",
+      "category": "future",
+      "title": "WHIPLASH - Elide 2.0",
+      "content": "WHIPLASH is the Rust rewrite of Elide targeting: <10ms cold start, >1M RPS, <30MB memory baseline, <20MB binary size. Architecture includes crates: elide-core, elide-js, elide-http, elide-rpc, elide-runtime. Uses Cap'n Proto for protocol definitions.",
+      "tags": ["whiplash", "rust", "future", "elide2"]
+    },
+    {
+      "id": "elide-cors-pattern",
+      "category": "http",
+      "title": "CORS Headers Pattern",
+      "content": "Standard CORS headers for Elide HTTP servers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }. Handle OPTIONS requests for preflight.",
+      "tags": ["cors", "http", "headers", "security"]
+    },
+    {
+      "id": "elide-health-check",
+      "category": "http",
+      "title": "Health Check Endpoint Pattern",
+      "content": "All Elide HTTP servers should implement a health check at /health returning: { status: 'healthy' } with Content-Type: application/json. This enables load balancer health monitoring and service discovery.",
+      "tags": ["health", "http", "monitoring", "pattern"]
+    },
+    {
+      "id": "elide-showcase-count",
+      "category": "ecosystem",
+      "title": "Elide Showcase Ecosystem",
+      "content": "The elide-showcases repository contains 211+ demonstration projects covering: AI/ML (25+), Edge Computing (15+), Enterprise Platforms (20+), Data Processing (15+), API & Integration (20+), DevOps (10+), and Polyglot examples (15+). Top showcases: llm-inference-server, ai-agent-framework, graphql-federation.",
+      "tags": ["showcases", "examples", "ecosystem"]
+    },
+    {
+      "id": "elide-quiz-categories",
+      "category": "learning",
+      "title": "Elide Quiz Structure",
+      "content": "The Elide Quiz contains 500 questions across categories: Runtime & Core (100), CLI Commands (80), HTTP & Servers (80), Projects & Dependencies (60), Polyglot (50), Testing & Build (40), Beta11 Features (50), Advanced Topics (40). Thresholds: Pass 350+ (70%), Expert 425+ (85%), Master 475+ (95%).",
+      "tags": ["quiz", "learning", "assessment"]
+    },
+    {
+      "id": "elide-performance-metrics",
+      "category": "performance",
+      "title": "Elide Performance Benchmarks",
+      "content": "Elide performance on Linux: ~20ms cold start (10x faster than Node.js), ~800K requests per second, <1ms cross-language call overhead. Benchmarked by TechEmpower. GraalVM provides unified GC across all languages on shared heap.",
+      "tags": ["performance", "benchmarks", "optimization"]
+    },
+    {
+      "id": "elide-module-export",
+      "category": "http",
+      "title": "Module Export HTTP Pattern",
+      "content": "Alternative HTTP pattern: async function fetch(req: Request): Promise<Response> { ... }; export default { fetch }. This pattern wraps the fetch function in an object, useful when additional exports are needed from the module.",
+      "tags": ["http", "export", "pattern", "module"]
+    },
+    {
+      "id": "elide-dependencies-npm",
+      "category": "dependencies",
+      "title": "NPM Dependencies in Elide",
+      "content": "Add npm dependencies in elide.pkl: dependencies { npm { 'package-name' = '^1.0.0' } }. Run 'elide install' to install. Note: For HTTP servers, prefer native Elide fetch handler over npm HTTP libraries for best performance.",
+      "tags": ["npm", "dependencies", "packages"]
+    },
+    {
+      "id": "elide-streaming-response",
+      "category": "http",
+      "title": "Streaming Responses in Elide",
+      "content": "Create streaming responses using ReadableStream: new Response(new ReadableStream({ start(controller) { controller.enqueue(data); controller.close(); } })). Useful for SSE, large file downloads, and real-time data.",
+      "tags": ["streaming", "http", "response", "readablestream"]
+    },
+    {
+      "id": "elide-error-handling",
+      "category": "patterns",
+      "title": "Error Handling Pattern",
+      "content": "Wrap fetch handler in try/catch: try { return new Response(...); } catch (error) { return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } }); }",
+      "tags": ["error", "handling", "pattern", "http"]
+    },
+    {
+      "id": "elide-graalvm-version",
+      "category": "core",
+      "title": "GraalVM Version",
+      "content": "Elide is built on GraalVM v25.0.0 with Truffle framework. This provides: JIT compilation across languages, ahead-of-time native image compilation, polyglot interoperability, and unified memory management.",
+      "tags": ["graalvm", "truffle", "jit", "native-image"]
+    },
+    {
+      "id": "elide-native-http",
+      "category": "http",
+      "title": "Native HTTP Advantage",
+      "content": "Elide's native HTTP using Netty + Micronaut outperforms npm-based HTTP libraries. The Fetch Handler pattern requires no imports and runs directly on the optimized runtime. For production performance, always prefer native HTTP over express, fastify, etc.",
+      "tags": ["http", "native", "performance", "netty"]
+    },
+    {
+      "id": "elide-testing",
+      "category": "testing",
+      "title": "Testing in Elide",
+      "content": "Run tests with 'elide test'. Write unit tests for pure functions, integration tests for HTTP endpoints. Test polyglot interactions explicitly. Elide supports standard testing patterns with built-in test runner.",
+      "tags": ["testing", "test", "unit", "integration"]
+    },
+    {
+      "id": "elide-capnproto",
+      "category": "protocol",
+      "title": "Cap'n Proto in WHIPLASH",
+      "content": "WHIPLASH uses Cap'n Proto for protocol definitions. Files: base.capnp (fundamental types: Timestamp, Duration, Error, Metadata), http.capnp (HttpRequest, HttpResponse, Header, HttpMethod). Provides efficient zero-copy serialization.",
+      "tags": ["capnproto", "protocol", "whiplash", "serialization"]
+    }
+  ]
+}

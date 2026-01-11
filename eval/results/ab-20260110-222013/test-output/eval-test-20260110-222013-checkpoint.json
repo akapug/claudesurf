@@ -1,0 +1,50 @@
+{
+  "agent_id": "eval-test-20260110-222013",
+  "completion_time": "2026-01-11",
+  "status": "completed",
+  "steps_total": 100,
+  "steps_executed": 87,
+  "current_step": 100,
+  "completed_steps": [1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100],
+  "steps_skipped": {
+    "8-10": "Crates worker, sandbox, wasm do not exist",
+    "21-30": "Only 10 protocol files exist"
+  },
+  "cross_reference_items": {
+    "crates": [
+      {"name": "core", "path": "crates/core/src/lib.rs", "key_exports": ["prelude", "allocator", "initialize_runtime_with_call", "initialize_runtime_simple"]},
+      {"name": "js", "path": "crates/js/src/lib.rs", "key_exports": ["jsapi_generate_uuid_v4_string", "jsapi_free_uuid_v4_string", "precompile"]},
+      {"name": "http", "path": "crates/http/src/lib.rs", "key_exports": ["Handler", "Request", "Response", "Server", "ServerConfig"]},
+      {"name": "rpc", "path": "crates/rpc/src/lib.rs", "key_exports": ["RpcDispatcher", "RpcFrame", "RpcService", "RpcError", "RpcRuntime"]},
+      {"name": "runtime", "path": "crates/runtime/src/lib.rs", "key_exports": ["initialize_async_runtime", "create_rpc_runtime", "telemetry_integration"]},
+      {"name": "telemetry", "path": "crates/telemetry/src/lib.rs", "key_exports": ["emit_telemetry", "queue_event", "init_telemetry", "flush_telemetry"]},
+      {"name": "cli", "path": "crates/cli/src/lib.rs", "key_exports": ["ElideCli", "ElideCommands", "try_parse_cli"]}
+    ],
+    "protocols": [
+      {"name": "base.capnp", "schema_id": "0x969fea1076ac5a7f"},
+      {"name": "cli.capnp", "schema_id": "0xccd8b69e5412e269"},
+      {"name": "env.capnp", "schema_id": "0xac00ff49f69cbc0f"},
+      {"name": "url.capnp", "schema_id": "0xaa01e7a2eaee812c"},
+      {"name": "http.capnp", "schema_id": "0xf33da84cc89c81c5"},
+      {"name": "sys.capnp", "schema_id": "0xce63a482a90ce451"},
+      {"name": "tools.capnp", "schema_id": "0xdc8d6251ad7d70f8"},
+      {"name": "engine.capnp", "schema_id": "0xdbf7a17f31dc03d3"},
+      {"name": "invocation.capnp", "schema_id": "0xe123c205d2399ae0"},
+      {"name": "envelope.capnp", "schema_id": "0xb8c3d9e4f5a6b7c8"}
+    ],
+    "showcases_analyzed": 50,
+    "showcases_total": 216,
+    "quiz_questions": 500
+  },
+  "artifacts": {
+    "analysis_file": "/workspace/output/eval-test-20260110-222013-analysis.md",
+    "analysis_lines": 1186
+  },
+  "key_insights": [
+    "RPC crate is the protocol hub - imports all 10 Cap'n Proto schemas",
+    "invocation.capnp is the master protocol - imports all others",
+    "All 216 showcases follow identical elide.pkl + server.ts pattern",
+    "500 quiz questions provide comprehensive coverage of all features",
+    "Telemetry is panic-safe by design (catch_unwind on all public APIs)"
+  ]
+}

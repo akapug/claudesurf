@@ -1,0 +1,19 @@
+{
+  "control": {
+    "exit_code": 0,
+    "duration_seconds": 1856,
+    "file_count": 0,
+    "output_bytes": 0,
+    "log_lines": 71,
+    "compactions": 1
+  },
+  "test": {
+    "exit_code": 0,
+    "duration_seconds": 1856,
+    "file_count": 2,
+    "output_bytes": 50516,
+    "log_lines": 72,
+    "compactions": 0
+0
+  }
+}

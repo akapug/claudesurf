@@ -1,0 +1,20 @@
+amends "elide:project.pkl"
+
+name = "analytics-engine"
+description = "Real-time analytics processing engine with metrics aggregation and visualization APIs"
+
+entrypoint {
+  "server.ts"
+}
+
+languages {
+  typescript {
+    enabled = true
+    strict = true
+  }
+}
+
+server {
+  port = 8080
+  host = "0.0.0.0"
+}

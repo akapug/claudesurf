@@ -1,0 +1,19 @@
+amends "elide:project.pkl"
+
+name = "realtime-dashboard"
+description = "Real-time metrics dashboard with SSE streaming and historical data"
+
+entrypoint {
+  "server.ts"
+}
+
+languages {
+  typescript {
+    enabled = true
+  }
+}
+
+server {
+  port = 8080
+  host = "0.0.0.0"
+}
