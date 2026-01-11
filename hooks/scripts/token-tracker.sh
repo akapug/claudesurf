@@ -13,7 +13,13 @@ else
   AGENT_ID="${CLAUDESURF_AGENT_ID:-agent}"
 fi
 
-SESSION_ID="${CLAUDE_SESSION_ID:-$$}"
+# Read session ID from file created by session-restore.sh
+SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
+if [[ -f "$SESSION_FILE" ]]; then
+  SESSION_ID=$(cat "$SESSION_FILE")
+else
+  SESSION_ID="default"
+fi
 STATE_FILE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
 
 # Read tool input from stdin (Claude passes JSON with tool result)

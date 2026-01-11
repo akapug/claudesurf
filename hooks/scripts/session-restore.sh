@@ -23,6 +23,16 @@ if [[ "$AGENT_ID" == "unknown" ]]; then
   exit 0
 fi
 
+# Create session ID file for other hooks to use
+# This ensures all hooks in the same session use the same identifier
+SESSION_ID="$(date +%s)-$$"
+SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
+echo "$SESSION_ID" > "$SESSION_FILE"
+
+# Clean up old token/memory state files from previous sessions
+rm -f /tmp/claudesurf-tokens-${AGENT_ID}-*.json 2>/dev/null || true
+rm -f /tmp/claudesurf-memory-${AGENT_ID}-*.json 2>/dev/null || true
+
 # Fetch checkpoint from API (JSON-RPC format)
 RESPONSE=$(curl -s --max-time 10 -X POST "${API_URL}/api/mcp" \
   -H "Content-Type: application/json" \

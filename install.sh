@@ -30,6 +30,15 @@ SETTINGS_FILE="${CLAUDE_DIR}/settings.json"
 HOOKS_DIR="${CLAUDE_DIR}/hooks"
 REPO_URL="https://github.com/akapug/claudesurf"
 
+# Cross-platform sed -i wrapper (macOS BSD sed vs GNU sed)
+sed_inplace() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
 # Parse arguments
 DRY_RUN=false
 UNINSTALL=false
@@ -58,7 +67,11 @@ check_deps() {
 
   if [[ ${#missing[@]} -gt 0 ]]; then
     error "Missing dependencies: ${missing[*]}"
-    error "Install them first: sudo apt install ${missing[*]}"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      error "Install them first: brew install ${missing[*]}"
+    else
+      error "Install them first using your package manager (e.g., apt, dnf, pacman)"
+    fi
     exit 1
   fi
 }
@@ -107,7 +120,7 @@ fix_hook_paths() {
     if [[ "$DRY_RUN" == "true" ]]; then
       info "[dry-run] Would replace \${CLAUDE_PLUGIN_ROOT} with $PLUGIN_DIR in hooks.json"
     else
-      sed -i "s|\${CLAUDE_PLUGIN_ROOT}|$PLUGIN_DIR|g" "$hooks_json"
+      sed_inplace "s|\${CLAUDE_PLUGIN_ROOT}|$PLUGIN_DIR|g" "$hooks_json"
     fi
   fi
 
@@ -116,7 +129,7 @@ fix_hook_paths() {
     if [[ "$DRY_RUN" == "true" ]]; then
       info "[dry-run] Would replace \${CLAUDE_PLUGIN_ROOT} with $PLUGIN_DIR in .mcp.json"
     else
-      sed -i "s|\${CLAUDE_PLUGIN_ROOT}|$PLUGIN_DIR|g" "$mcp_json"
+      sed_inplace "s|\${CLAUDE_PLUGIN_ROOT}|$PLUGIN_DIR|g" "$mcp_json"
     fi
   fi
 }
