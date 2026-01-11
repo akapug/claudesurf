@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": ["Bash(*)", "Read", "Write", "Edit", "Glob", "Grep", "mcp__*"],
+    "deny": []
+  },
+  "enableAllProjectMcpServers": true,
+  "hooks": {}
+}
