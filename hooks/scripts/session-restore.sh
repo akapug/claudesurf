@@ -52,6 +52,13 @@ fi
 SUMMARY=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.conversationSummary // empty' 2>/dev/null || echo "")
 PENDING=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.pendingWork // [] | join("\n- ")' 2>/dev/null || echo "")
 ACCOMPLISHMENTS=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.accomplishments // [] | join("\n- ")' 2>/dev/null || echo "")
+RECENT_CONTEXT=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.recentContext // empty' 2>/dev/null || echo "")
+
+# Extract categorized memories
+DECISIONS=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.decisions // [] | join("\n  - ")' 2>/dev/null || echo "")
+PREFERENCES=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.preferences // [] | join("\n  - ")' 2>/dev/null || echo "")
+ERRORS=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.errors // [] | join("\n  - ")' 2>/dev/null || echo "")
+CONTEXT_ITEMS=$(echo "$CHECKPOINT_JSON" | jq -r '.checkpoint.contextItems // [] | join("\n  - ")' 2>/dev/null || echo "")
 
 # If we have checkpoint data, output it for Claude to see
 if [[ -n "$SUMMARY" ]]; then
@@ -66,6 +73,12 @@ ${SUMMARY}
 
 EOF
 
+  if [[ -n "$RECENT_CONTEXT" ]]; then
+    echo "## Token Stats"
+    echo "${RECENT_CONTEXT}"
+    echo ""
+  fi
+
   if [[ -n "$ACCOMPLISHMENTS" ]]; then
     echo "## Completed Last Session"
     echo "- ${ACCOMPLISHMENTS}"
@@ -75,6 +88,37 @@ EOF
   if [[ -n "$PENDING" ]]; then
     echo "## Pending Work"
     echo "- ${PENDING}"
+    echo ""
+  fi
+
+  # Display categorized memories if any exist
+  HAS_CATEGORIES=false
+  if [[ -n "$DECISIONS" ]] || [[ -n "$PREFERENCES" ]] || [[ -n "$ERRORS" ]] || [[ -n "$CONTEXT_ITEMS" ]]; then
+    HAS_CATEGORIES=true
+    echo "## Preserved Memories"
+  fi
+
+  if [[ -n "$DECISIONS" ]]; then
+    echo "### Decisions Made"
+    echo "  - ${DECISIONS}"
+    echo ""
+  fi
+
+  if [[ -n "$PREFERENCES" ]]; then
+    echo "### User Preferences"
+    echo "  - ${PREFERENCES}"
+    echo ""
+  fi
+
+  if [[ -n "$ERRORS" ]]; then
+    echo "### Errors Encountered"
+    echo "  - ${ERRORS}"
+    echo ""
+  fi
+
+  if [[ -n "$CONTEXT_ITEMS" ]]; then
+    echo "### Important Context"
+    echo "  - ${CONTEXT_ITEMS}"
     echo ""
   fi
 

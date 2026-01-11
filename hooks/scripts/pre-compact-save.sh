@@ -32,7 +32,7 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Load token data from tracker
 SESSION_ID="${CLAUDE_SESSION_ID:-$$}"
 TOKEN_STATE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
-ZONE_STATE="/tmp/claudesurf-zone-${AGENT_ID}.json"
+MEMORY_STATE="/tmp/claudesurf-memory-${AGENT_ID}-${SESSION_ID}.json"
 
 if [[ -f "$TOKEN_STATE" ]]; then
   TOTAL_TOKENS=$(jq -r '.totalTokens // 0' "$TOKEN_STATE")
@@ -44,22 +44,67 @@ else
   TOOL_COUNT=0
 fi
 
-# Create checkpoint payload with token data
-PAYLOAD=$(cat << EOF
-{
-  "tool": "agent-status",
-  "args": {
-    "action": "save-checkpoint",
-    "agentId": "${AGENT_ID}",
-    "teamId": "${TEAM_ID}",
-    "conversationSummary": "[PreCompact ${COMPACT_TYPE}] Context saved at ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens, ${TOOL_COUNT} tool calls)",
-    "workingOn": "Session compacted - context preserved",
-    "pendingWork": [],
-    "accomplishments": [],
-    "recentContext": "Tokens: ${TOTAL_TOKENS}, Context: ${CONTEXT_PERCENT}%, Tools: ${TOOL_COUNT}"
-  }
-}
-EOF
+# Load categorized memories
+if [[ -f "$MEMORY_STATE" ]]; then
+  DECISIONS=$(jq -c '.decisions // []' "$MEMORY_STATE")
+  PREFERENCES=$(jq -c '.preferences // []' "$MEMORY_STATE")
+  ERRORS=$(jq -c '.errors // []' "$MEMORY_STATE")
+  CONTEXT_ITEMS=$(jq -c '.context // []' "$MEMORY_STATE")
+else
+  DECISIONS="[]"
+  PREFERENCES="[]"
+  ERRORS="[]"
+  CONTEXT_ITEMS="[]"
+fi
+
+# Build categorized context string for summary
+CATEGORIES_SUMMARY=""
+if [[ "$DECISIONS" != "[]" ]]; then
+  DECISION_COUNT=$(echo "$DECISIONS" | jq 'length')
+  CATEGORIES_SUMMARY="${CATEGORIES_SUMMARY}${DECISION_COUNT} decisions, "
+fi
+if [[ "$PREFERENCES" != "[]" ]]; then
+  PREF_COUNT=$(echo "$PREFERENCES" | jq 'length')
+  CATEGORIES_SUMMARY="${CATEGORIES_SUMMARY}${PREF_COUNT} preferences, "
+fi
+if [[ "$ERRORS" != "[]" ]]; then
+  ERROR_COUNT=$(echo "$ERRORS" | jq 'length')
+  CATEGORIES_SUMMARY="${CATEGORIES_SUMMARY}${ERROR_COUNT} errors, "
+fi
+if [[ "$CONTEXT_ITEMS" != "[]" ]]; then
+  CTX_COUNT=$(echo "$CONTEXT_ITEMS" | jq 'length')
+  CATEGORIES_SUMMARY="${CATEGORIES_SUMMARY}${CTX_COUNT} context items"
+fi
+CATEGORIES_SUMMARY="${CATEGORIES_SUMMARY:-no categorized memories}"
+
+# Create checkpoint payload with token data and categories
+PAYLOAD=$(jq -n \
+  --arg agent "$AGENT_ID" \
+  --arg team "$TEAM_ID" \
+  --arg summary "[PreCompact ${COMPACT_TYPE}] ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens). Categories: ${CATEGORIES_SUMMARY}" \
+  --arg working "Session compacted - context preserved" \
+  --arg recent "Tokens: ${TOTAL_TOKENS}, Context: ${CONTEXT_PERCENT}%, Tools: ${TOOL_COUNT}" \
+  --argjson decisions "$DECISIONS" \
+  --argjson preferences "$PREFERENCES" \
+  --argjson errors "$ERRORS" \
+  --argjson context "$CONTEXT_ITEMS" \
+  '{
+    tool: "agent-status",
+    args: {
+      action: "save-checkpoint",
+      agentId: $agent,
+      teamId: $team,
+      conversationSummary: $summary,
+      workingOn: $working,
+      pendingWork: [],
+      accomplishments: [],
+      recentContext: $recent,
+      decisions: $decisions,
+      preferences: $preferences,
+      errors: $errors,
+      contextItems: $context
+    }
+  }'
 )
 
 # Save checkpoint to API
