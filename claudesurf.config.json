@@ -1,5 +1,5 @@
 {
-  "agentId": "cto-glue",
+  "agentId": "inmem-q",
   "teamId": "m57596g091akfcdwzqvk5k0dhn7xfm3e",
   "apiUrl": "https://glue.elide.work",
   "hooksDir": ".claude/hooks",

@@ -30,7 +30,13 @@ fi
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Load token data from tracker
-SESSION_ID="${CLAUDE_SESSION_ID:-$$}"
+# Read session ID from file created by session-restore.sh
+SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
+if [[ -f "$SESSION_FILE" ]]; then
+  SESSION_ID=$(cat "$SESSION_FILE")
+else
+  SESSION_ID="default"
+fi
 TOKEN_STATE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
 MEMORY_STATE="/tmp/claudesurf-memory-${AGENT_ID}-${SESSION_ID}.json"
 

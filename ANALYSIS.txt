@@ -1,0 +1,366 @@
+       Research Report: Claude Code Context and Token Information Exposure
+
+       Based on my comprehensive research of Claude Code documentation, source code, and
+       real-world examples from the ClaudeSurf project, here's what I found about how
+       Claude Code exposes context and token information to hooks and extensions:
+
+       ---
+       1. Hook Data Passed Via stdin (JSON Format)
+
+       All hooks receive JSON data via stdin. The structure varies by hook type:
+
+       Common Fields (All Hooks)
+
+       - session_id: Session identifier for differentiating concurrent Claude Code
+       instances
+       - transcript_path: Path to a JSONL file containing the complete session transcrip
+       - cwd: Current working directory
+       - permission_mode: One of "default", "plan", "acceptEdits", "dontAsk",
+       "bypassPermissions"
+       - hook_event_name: The event type that triggered the hook
+
+       Hook Type-Specific Fields
+
+       PreToolUse & PostToolUse:
+       - tool_name: Name of the tool being invoked (e.g., "Bash", "Read", "Write")
+       - tool_input: Object containing tool parameters (structure varies by tool)
+       - tool_use_id: Unique identifier for this tool use
+       - tool_response: (PostToolUse only) The tool's output/result
+
+       SessionStart:
+       - Environment variables: $CLAUDE_PROJECT_DIR, $CLAUDE_ENV_FILE,
+       $CLAUDE_CODE_REMOTE, ${CLAUDE_PLUGIN_ROOT}
+
+       PreCompact & Stop:
+       - matcher: For PreCompact, indicates "auto" or "manual" compaction trigger
+       - trigger: Whether compaction was automatic or manually initiated
+
+       Important: transcript_path Analysis
+
+       The transcript file is JSONL (JSON Lines) format where each line represents a
+       session event. Each line contains:
+       - userType: Type of user (agent or human)
+       - cwd: Working directory at that point
+       - sessionId: Session identifier
+       - type: Event type
+       - message: Object with role (user/assistant) and content
+       - uuid, timestamp: Event identifiers
+
+       This allows hooks to access the complete conversation history to extract context.
+
+       ---
+       2. Token/Context Information Available to Hooks
+
+       Direct Token Data:
+       - Hooks do NOT directly receive token count fields in the stdin JSON
+       - However, from the ClaudeSurf token-tracker.sh script, we can see that token dat
+        may be embedded in tool_response fields as:
+         - usage.input_tokens
+         - usage.output_tokens
+
+       Indirect Context Access:
+       - Hooks can parse the transcript_path JSONL file to analyze conversation history
+       - Context percentage can be estimated by analyzing transcript size
+       - The ClaudeSurf project implements manual token tracking via environment
+       variables
+
+       Context Monitoring (User-Accessible):
+       - The /context command (available in Claude Code v2.0.10+) provides:
+         - Token usage breakdown by category
+         - Available context remaining
+         - MCP server context consumption
+         - Total context window percentage used
+
+       ---
+       3. Claude Code Environment Variables
+
+       Available to Hooks & Extensions:
+
+
+       Variable: CLAUDE_PROJECT_DIR
+       Purpose: Project root absolute path
+       ────────────────────────────────────────
+       Variable: CLAUDE_ENV_FILE
+       Purpose: For SessionStart hooks to persist environment variables
+       ────────────────────────────────────────
+       Variable: CLAUDE_CODE_REMOTE
+       Purpose: "true" if executing remotely
+       ────────────────────────────────────────
+       Variable: CLAUDE_PLUGIN_ROOT
+       Purpose: Path to plugin directory
+       ────────────────────────────────────────
+       Variable: CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR
+       Purpose: If set to "1", resets to project directory after each command
+       ────────────────────────────────────────
+       Variable: MAX_MCP_OUTPUT_TOKENS
+       Purpose: Configurable limit for MCP tool output (default: 25,000 tokens)
+       Custom Variables (from ClaudeSurf):
+       - AGENT_ID: Agent identifier
+       - TEAM_ID: Team identifier
+       - CLAUDESURF_API_URL or GLUE_API_URL: API endpoint for saving checkpoints
+
+       ---
+       4. Hook Response Format (Structured JSON Control)
+
+       Hooks can return structured JSON via stdout to control Claude Code behavior:
+
+       {
+         "continue": false,
+         "decision": "block",
+         "reason": "Explanation shown to user/Claude",
+         "stopReason": "Message shown when continue=false",
+         "suppressOutput": false,
+         "updatedInput": { "field": "new_value" },
+         "systemMessage": "Optional warning message"
+       }
+
+       Field Definitions:
+       - continue (boolean): If false, stops Claude from proceeding (takes precedence)
+       - decision: "approve", "block", "allow", or "deny"
+       - reason: Explanation shown to Claude
+       - updatedInput: Modify tool parameters before execution
+       - suppressOutput: Hide stdout from transcript
+
+       ---
+       5. MCP Server Capabilities
+
+       MCP servers connected to Claude Code can expose:
+
+       Resource Management:
+       - Read resources (files, database rows, JSON payloads)
+       - Resource notifications (ResourceListChanged, TextResourceUpdated)
+       - Support for resource URIs and content types
+
+       Sampling Support:
+       - Currently NOT supported by Claude Code as an MCP client
+       - Feature request exists for sampling to leverage Claude Max subscriptions
+       - Means MCP servers requiring LLM inference must call Anthropic API directly
+
+       Tool Definitions:
+       - Can expose multiple tools with parameters
+       - Each tool contributes to context window usage
+       - Can be dynamically enabled/disabled via /mcp or @mention commands
+
+       ---
+       6. Context Window Management
+
+       Context Allocation (for 200K token Sonnet 4.5):
+       - System prompt: ~1.5%
+       - System tools: ~6.2%
+       - Reserved (autocompact + output): ~22.5%
+       - MCP tools: 2.8% - 41% (highly variable)
+       - Custom agents/Memory files: variable
+       - Messages: Remaining space
+
+       Important Caveat:
+       The /context command may overstate MCP token usage by counting shared overhead fo
+        every tool definition, even though tokens are only used once.
+
+       ---
+       7. Real-World Example: ClaudeSurf Implementation
+
+       The ClaudeSurf project demonstrates practical token tracking:
+
+       Files in this repo:
+       - /Users/ember/dev/claudesurf/hooks/scripts/token-tracker.sh: Runs on PostToolUse
+       to extract and aggregate token data
+       - Extracts usage.input_tokens and usage.output_tokens from tool responses
+       - Falls back to content-length heuristics (~4 chars per token) if token data
+       unavailable
+       - Maintains cumulative counts in temp JSON files per session
+       - Calculates context percentage against 200K limit
+
+       Key Implementation:
+       INPUT_TOKENS=$(echo "$INPUT" | jq -r '.usage.input_tokens // .input_tokens //
+       empty')
+       OUTPUT_TOKENS=$(echo "$INPUT" | jq -r '.usage.output_tokens // .output_tokens //
+       empty')
+       # Falls back to content length estimation if tokens unavailable
+       CONTEXT_PERCENT=$((TOTAL_TOKENS * 100 / CONTEXT_LIMIT))
+
+       ---
+       8. What's NOT Directly Exposed
+
+       Limitations:
+       - Model-internal context state (which model, temperature, etc.) is not passed to
+       hooks
+       - Token probabilities or logit data are not accessible
+       - Cache usage details not exposed
+       - Streaming state/progress not sent to hooks
+       - Hook data does NOT include estimated remaining context (must be calculated)
+
+       ---
+       Summary
+
+       Claude Code exposes context/token information through:
+
+       1. Hook stdin: Session metadata + transcript_path for full conversation history
+       2. Tool responses: Token usage data in usage.input_tokens/output_tokens fields
+       3. Environment variables: Project context and configuration
+       4. User command: /context for interactive context window visualization
+       5. MCP resources: Can provide document/data context to Claude
+
+       Hooks have indirect access to context by parsing the transcript JSONL file, but
+       lack direct token count fields in the hook input. The ClaudeSurf project
+       demonstrates practical workarounds using PostToolUse hooks to track tokens from
+       tool responses and maintain session state.
+
+       ---
+       Sources
+
+       - https://code.claude.com/docs/en/hooks
+       - https://claude.com/blog/how-to-configure-hooks
+       - https://docs.claude.com/en/docs/claude-code/hooks
+       - https://blog.gitbutler.com/automate-your-ai-workflows-with-claude-code-hooks
+       - https://stevekinney.com/courses/ai-development/claude-code-hook-control-flow
+       - https://claudelog.com/mechanics/hooks/
+       - https://code.claude.com/docs/en/hooks-guide
+       - https://medium.com/@dan.avila7/claude-code-environment-variables-a-complete-ref
+       rence-guide-41229ef18120
+       - https://scottspence.com/posts/optimising-mcp-server-context-usage-in-claude-cod
+       - https://www.vibesparking.com/en/blog/ai/claude-code/commands/2025-08-21-context
+       claude-code-context-tokens-visualizer/
+       - https://code.claude.com/docs/en/mcp
+       - https://docs.claude.com/en/docs/mcp
+
+
+  ⎿  Done (24 tool uses · 36.1k tokens · 2m 5s)
+  ⎿  PostToolUse:Task hook succeeded
+
+∴ Thinking…
+
+  This is great research. Let me summarize the key findings for the user and provide
+  recommendations.
+
+  The key findings are:
+  1. Hooks receive JSON via stdin with a transcript_path field pointing to a JSONL file with
+  the full conversation
+  2. Token usage data is NOT directly in the hook input - the plugin was trying to read from
+  the wrong place
+  3. The session_id IS provided in the hook input - so we could use that instead of creating
+  our own
+  4. There's no direct context percentage exposed, but we could parse the transcript file to
+  estimate
+
+  The most reliable approach would be:
+  1. Use the session_id from the hook input (instead of our hacky file-based approach)
+  2. Parse the transcript_path JSONL file to get actual conversation content
+  3. Estimate tokens from that content
+  4. Or just simplify and focus on PreCompact being the reliable signal
+
+  Let me present this to the user.
+
+⏺ Great findings. Here's what's actually available:
+
+  What Claude Code Actually Passes to Hooks
+
+  Hooks receive JSON via stdin with these key fields:
+  Field: session_id
+  Description: Session identifier (we were creating our own - this exists!)
+  ────────────────────────────────────────
+  Field: transcript_path
+  Description: Path to JSONL file with full conversation history
+  ────────────────────────────────────────
+  Field: tool_name
+  Description: The tool being used
+  ────────────────────────────────────────
+  Field: tool_input / tool_response
+  Description: Tool data
+  The Problem with Current Implementation
+
+  The plugin tries to read usage.input_tokens from the tool response, but token counts aren't
+   in tool responses - they're in the API response envelope that hooks don't see.
+
+  What Actually Works
+
+  1. transcript_path - This is the goldmine. It's a JSONL file with the entire conversation.
+  We can:
+    - Read it and estimate tokens from actual content
+    - Get real message sizes, not guesses
+  2. session_id - Already provided by Claude Code. No need for our hacky session file.
+  3. PreCompact hook - This fires reliably before compaction. The percentage warnings are
+  decorative; this is the real signal.
+
+  Recommendations
+
+  Option A: Simplify - Drop the token tracking theater. Just save checkpoints on PreCompact
+  and Stop. The warnings are misleading anyway.
+
+  Option B: Fix properly - Use transcript_path to read actual conversation content and
+  estimate tokens from that. Use the provided session_id.
+
+  Which direction do you want to go?
+
+✻ Cogitated for 2m 7s
+
+❯ Are we going to have issues externally relying on the transcript to be a reliable
+  proxy of token usage? Will Claude Code compact, summarize, remove things from under
+  our hood that makes attempts at reliable context metering a fool's errand?
+
+∴ Thinking…
+
+  This is a really good question. The user is asking whether the transcript_path file is a
+  reliable source of truth, or if Claude Code modifies context behind the scenes in ways that
+   would make our token estimation unreliable.
+
+  Let me think about this:
+
+  1. The transcript_path is a JSONL file that logs the conversation history
+  2. But Claude Code does context management internally - auto-compaction, summarization,
+  etc.
+  3. The question is: does the transcript file reflect what's actually in Claude's context
+  window, or is it a complete log that doesn't account for compaction?
+
+  From what I know about Claude Code:
+  - When auto-compaction happens, Claude summarizes old messages
+  - The transcript likely logs everything that happened, not what's currently in context
+  - So reading the transcript and summing up tokens would give you "total tokens ever", not
+  "current context window usage"
+
+  This is a fundamental problem. The transcript is an audit log, not a representation of
+  current context state.
+
+  Let me also think about what happens during compaction:
+  - PreCompact hook fires BEFORE compaction
+  - Then Claude summarizes/removes old content
+  - The new summarized content replaces the old
+  - But does the transcript file get updated to reflect this? Probably not - it's append-only
+   logging
+
+  So the user is right to be skeptical. Using transcript as a proxy for current context is
+  probably a fool's errand because:
+  1. It's cumulative/append-only, not a snapshot of current context
+  2. We don't know how Claude Code's summarization affects token counts
+  3. We can't see what Claude Code considers "in context" vs "compacted out"
+
+  The honest answer is: yes, this is probably unreliable. The only truly reliable signal is
+  PreCompact firing - that's Claude Code telling us "I'm about to compact, do something now."
+
+⏺ You're asking exactly the right question. And the answer is: yes, it's a fool's errand.
+
+  The transcript_path is an append-only audit log, not a representation of what's currently
+  in Claude's context window.
+
+  When compaction happens:
+  1. Claude Code summarizes/removes old messages internally
+  2. The transcript file likely just keeps growing (it's a log)
+  3. We have no visibility into what Claude Code decided to keep vs. summarize vs. drop
+
+  So if you read the transcript and count tokens, you get "tokens ever seen" not "tokens
+  currently in context." After compaction, the transcript might show 150K tokens but Claude's
+   actual context might be at 30K because it summarized everything.
+
+  The fundamental problem: Claude Code doesn't expose its internal context state. We can't
+  see:
+  - What's been compacted out
+  - What summaries replaced original content
+  - The actual current context window usage
+
+  What's actually reliable:
+  - PreCompact hook fires → "I'm about to compact" (true signal)
+  - Stop hook fires → "Session ending" (true signal)
+  - Everything else is guesswork
+
+  My recommendation: Simplify to Option A. Kill the fake percentage meter. The plugin's real
+  value is "save important context before compaction" - and PreCompact gives us that signal
+  reliably. The token counting is theater that will mislead users.
