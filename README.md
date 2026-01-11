@@ -202,10 +202,16 @@ claudesurf/
 ├── hooks/
 │   ├── hooks.json           # Hook configuration
 │   └── scripts/
-│       ├── pre-compact-save.sh
-│       ├── session-restore.sh
-│       ├── context-monitor.sh
-│       └── session-checkpoint.sh
+│       ├── pre-compact-save.sh    # Save memory before compaction
+│       ├── session-restore.sh     # Restore checkpoint on start
+│       ├── context-monitor.sh     # Monitor context saturation
+│       ├── token-tracker.sh       # Track token usage
+│       ├── memory-writer.sh       # Write categorized memories
+│       └── session-checkpoint.sh  # Save on session end
+├── eval/                    # A/B evaluation harness
+│   ├── run-docker-eval.sh   # Docker orchestration
+│   ├── test-task.md         # Standardized test task
+│   └── baseline-settings.json
 ├── opencode-plugin/         # OpenCode native plugin
 │   ├── index.ts             # TypeScript plugin source
 │   ├── package.json
@@ -358,11 +364,12 @@ sed -i "s|\${CLAUDE_PLUGIN_ROOT}|$(pwd)|g" hooks/hooks.json .mcp.json
 
 ## Roadmap
 
-- [ ] Token count estimation (currently uses tool call heuristic)
+- [x] Token count estimation (parses API responses, falls back to content length)
 - [ ] Semantic memory retrieval (not just last checkpoint)
-- [ ] Memory categorization (decisions, preferences, errors)
+- [x] Memory categorization (decisions, preferences, errors, context)
 - [x] OpenCode CLI support (see `opencode-plugin/`)
 - [x] Auto-installer script that patches settings.json
+- [x] Docker A/B evaluation harness (see `eval/`)
 - [ ] Support for `${CLAUDE_PLUGIN_ROOT}` when Claude Code fixes the bug
 
 ## Contributing
