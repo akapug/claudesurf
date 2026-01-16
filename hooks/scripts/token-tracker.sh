@@ -7,27 +7,39 @@
 # 2. usage.input_tokens/output_tokens - Per-call API usage
 # 3. Estimate from content length - Fallback (unreliable)
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}"
-CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
-DEBUG_LOG="/tmp/claudesurf-debug.log"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Load agent ID for state file naming
-if [[ -f "$CONFIG_FILE" ]]; then
-  AGENT_ID=$(jq -r '.agentId // "agent"' "$CONFIG_FILE")
-  DEBUG_MODE=$(jq -r '.debug // false' "$CONFIG_FILE")
+# Load common functions if available
+if [[ -f "${SCRIPT_DIR}/lib/common.sh" ]]; then
+  source "${SCRIPT_DIR}/lib/common.sh"
+  load_config
+  STATE_DIR="$(get_state_dir)"
+  SESSION_ID="$(get_session_id)"
 else
-  AGENT_ID="${CLAUDESURF_AGENT_ID:-agent}"
-  DEBUG_MODE="${CLAUDESURF_DEBUG:-false}"
+  # Fallback for standalone mode
+  PLUGIN_ROOT="${CLAUDESURF_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}}"
+  CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+  STATE_DIR="/tmp/claudesurf"
+  mkdir -p "$STATE_DIR"
+
+  if [[ -f "$CONFIG_FILE" ]]; then
+    AGENT_ID=$(jq -r '.agentId // "agent"' "$CONFIG_FILE")
+    DEBUG_MODE=$(jq -r '.debug // false' "$CONFIG_FILE")
+  else
+    AGENT_ID="${CLAUDESURF_AGENT_ID:-agent}"
+    DEBUG_MODE="${CLAUDESURF_DEBUG:-false}"
+  fi
+
+  SESSION_FILE="${STATE_DIR}/session-${AGENT_ID}.id"
+  if [[ -f "$SESSION_FILE" ]]; then
+    SESSION_ID=$(cat "$SESSION_FILE")
+  else
+    SESSION_ID="default"
+  fi
 fi
 
-# Read session ID from file created by session-restore.sh
-SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
-if [[ -f "$SESSION_FILE" ]]; then
-  SESSION_ID=$(cat "$SESSION_FILE")
-else
-  SESSION_ID="default"
-fi
-STATE_FILE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
+STATE_FILE="${STATE_DIR}/tokens-${AGENT_ID}-${SESSION_ID}.json"
+DEBUG_LOG="${STATE_DIR}/debug.log"
 
 # Read tool input from stdin (Claude passes JSON with tool result)
 INPUT=$(cat)
@@ -64,7 +76,7 @@ TOOL_COUNT=$((TOOL_COUNT + 1))
 
 # Determine token source and calculate totals
 TOKEN_SOURCE="unknown"
-CONTEXT_LIMIT=${CONTEXT_LIMIT_FROM_API:-200000}
+CONTEXT_LIMIT=${CONTEXT_LIMIT_FROM_API:-${MAX_CONTEXT_TOKENS:-200000}}
 
 if [[ -n "$CURRENT_CONTEXT" && "$CURRENT_CONTEXT" != "null" ]]; then
   # Best case: Patch provides current context total

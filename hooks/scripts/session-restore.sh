@@ -4,18 +4,29 @@
 
 # Note: NOT using set -e because jq returns non-zero for null/missing fields
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}"
-CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Load config
-if [[ -f "$CONFIG_FILE" ]]; then
-  AGENT_ID=$(jq -r '.agentId // "unknown"' "$CONFIG_FILE")
-  TEAM_ID=$(jq -r '.teamId // "unknown"' "$CONFIG_FILE")
-  API_URL=$(jq -r '.apiUrl // "https://glue.elide.work"' "$CONFIG_FILE")
+# Load common functions if available
+if [[ -f "${SCRIPT_DIR}/lib/common.sh" ]]; then
+  source "${SCRIPT_DIR}/lib/common.sh"
+  load_config
+  STATE_DIR="$(get_state_dir)"
 else
-  AGENT_ID="${CLAUDESURF_AGENT_ID:-unknown}"
-  TEAM_ID="${CLAUDESURF_TEAM_ID:-unknown}"
-  API_URL="${CLAUDESURF_API_URL:-https://glue.elide.work}"
+  # Fallback for standalone mode
+  PLUGIN_ROOT="${CLAUDESURF_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}}"
+  CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+  STATE_DIR="/tmp/claudesurf"
+  mkdir -p "$STATE_DIR"
+
+  if [[ -f "$CONFIG_FILE" ]]; then
+    AGENT_ID=$(jq -r '.agentId // "unknown"' "$CONFIG_FILE")
+    TEAM_ID=$(jq -r '.teamId // "unknown"' "$CONFIG_FILE")
+    API_URL=$(jq -r '.apiUrl // "https://glue.elide.work"' "$CONFIG_FILE")
+  else
+    AGENT_ID="${CLAUDESURF_AGENT_ID:-unknown}"
+    TEAM_ID="${CLAUDESURF_TEAM_ID:-unknown}"
+    API_URL="${CLAUDESURF_API_URL:-https://glue.elide.work}"
+  fi
 fi
 
 # Skip if no agent configured
@@ -26,12 +37,12 @@ fi
 # Create session ID file for other hooks to use
 # This ensures all hooks in the same session use the same identifier
 SESSION_ID="$(date +%s)-$$"
-SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
+SESSION_FILE="${STATE_DIR}/session-${AGENT_ID}.id"
 echo "$SESSION_ID" > "$SESSION_FILE"
 
 # Clean up old token/memory state files from previous sessions
-rm -f /tmp/claudesurf-tokens-${AGENT_ID}-*.json 2>/dev/null || true
-rm -f /tmp/claudesurf-memory-${AGENT_ID}-*.json 2>/dev/null || true
+rm -f "${STATE_DIR}/tokens-${AGENT_ID}-"*.json 2>/dev/null || true
+rm -f "${STATE_DIR}/memory-${AGENT_ID}-"*.json 2>/dev/null || true
 
 # Fetch checkpoint from API (JSON-RPC format)
 RESPONSE=$(curl -s --max-time 10 -X POST "${API_URL}/api/mcp" \
