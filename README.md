@@ -107,6 +107,7 @@ export CLAUDESURF_API_URL="https://glue.elide.work"
 
 | Command | Description |
 |---------|-------------|
+| `/afk` | Comprehensive work review checklist when user is AFK |
 | `/claudesurf:save-memory` | Manually save current context to memory |
 | `/claudesurf:restore-context` | Restore previous session's checkpoint |
 | `/claudesurf:check-context` | Check current context zone status |
