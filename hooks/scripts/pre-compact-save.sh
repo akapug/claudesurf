@@ -6,20 +6,38 @@
 set -euo pipefail
 
 COMPACT_TYPE="${1:-auto}"
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}"
-CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Load config
-if [[ -f "$CONFIG_FILE" ]]; then
-  AGENT_ID=$(jq -r '.agentId // "unknown"' "$CONFIG_FILE")
-  TEAM_ID=$(jq -r '.teamId // "unknown"' "$CONFIG_FILE")
-  API_URL=$(jq -r '.apiUrl // "https://glue.elide.work"' "$CONFIG_FILE")
-  ENABLE_GROUPCHAT=$(jq -r '.enableGroupChatNotifications // true' "$CONFIG_FILE")
+# Load common functions if available
+if [[ -f "${SCRIPT_DIR}/lib/common.sh" ]]; then
+  source "${SCRIPT_DIR}/lib/common.sh"
+  load_config
+  STATE_DIR="$(get_state_dir)"
+  SESSION_ID="$(get_session_id)"
 else
-  AGENT_ID="${CLAUDESURF_AGENT_ID:-unknown}"
-  TEAM_ID="${CLAUDESURF_TEAM_ID:-unknown}"
-  API_URL="${CLAUDESURF_API_URL:-https://glue.elide.work}"
-  ENABLE_GROUPCHAT="true"
+  # Fallback for standalone mode
+  PLUGIN_ROOT="${CLAUDESURF_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}}"
+  CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+  STATE_DIR="/tmp/claudesurf"
+
+  if [[ -f "$CONFIG_FILE" ]]; then
+    AGENT_ID=$(jq -r '.agentId // "unknown"' "$CONFIG_FILE")
+    TEAM_ID=$(jq -r '.teamId // "unknown"' "$CONFIG_FILE")
+    API_URL=$(jq -r '.apiUrl // "https://glue.elide.work"' "$CONFIG_FILE")
+    ENABLE_GROUPCHAT=$(jq -r '.enableGroupChatNotifications // true' "$CONFIG_FILE")
+  else
+    AGENT_ID="${CLAUDESURF_AGENT_ID:-unknown}"
+    TEAM_ID="${CLAUDESURF_TEAM_ID:-unknown}"
+    API_URL="${CLAUDESURF_API_URL:-https://glue.elide.work}"
+    ENABLE_GROUPCHAT="true"
+  fi
+
+  SESSION_FILE="${STATE_DIR}/session-${AGENT_ID}.id"
+  if [[ -f "$SESSION_FILE" ]]; then
+    SESSION_ID=$(cat "$SESSION_FILE")
+  else
+    SESSION_ID="default"
+  fi
 fi
 
 # Skip if no agent configured
@@ -30,15 +48,8 @@ fi
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Load token data from tracker
-# Read session ID from file created by session-restore.sh
-SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
-if [[ -f "$SESSION_FILE" ]]; then
-  SESSION_ID=$(cat "$SESSION_FILE")
-else
-  SESSION_ID="default"
-fi
-TOKEN_STATE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
-MEMORY_STATE="/tmp/claudesurf-memory-${AGENT_ID}-${SESSION_ID}.json"
+TOKEN_STATE="${STATE_DIR}/tokens-${AGENT_ID}-${SESSION_ID}.json"
+MEMORY_STATE="${STATE_DIR}/memory-${AGENT_ID}-${SESSION_ID}.json"
 
 if [[ -f "$TOKEN_STATE" ]]; then
   TOTAL_TOKENS=$(jq -r '.totalTokens // 0' "$TOKEN_STATE")
@@ -95,42 +106,56 @@ PAYLOAD=$(jq -n \
   --argjson errors "$ERRORS" \
   --argjson context "$CONTEXT_ITEMS" \
   '{
-    tool: "agent-status",
-    args: {
-      action: "save-checkpoint",
-      agentId: $agent,
-      teamId: $team,
-      conversationSummary: $summary,
-      workingOn: $working,
-      pendingWork: [],
-      accomplishments: [],
-      recentContext: $recent,
-      decisions: $decisions,
-      preferences: $preferences,
-      errors: $errors,
-      contextItems: $context
-    }
-  }'
-)
+    jsonrpc: "2.0",
+    method: "tools/call",
+    params: {
+      name: "agent-status",
+      arguments: {
+        action: "save-checkpoint",
+        agentId: $agent,
+        teamId: $team,
+        conversationSummary: $summary,
+        workingOn: $working,
+        pendingWork: [],
+        accomplishments: [],
+        recentContext: $recent,
+        decisions: $decisions,
+        preferences: $preferences,
+        errors: $errors,
+        contextItems: $context
+      }
+    },
+    id: 1
+  }')
 
 # Save checkpoint to API
-curl -s -X POST "${API_URL}/api/mcp" \
+curl -s --max-time 15 -X POST "${API_URL}/api/mcp" \
   -H "Content-Type: application/json" \
   -d "$PAYLOAD" > /dev/null 2>&1 || true
 
 # Notify GroupChat if enabled
-if [[ "$ENABLE_GROUPCHAT" == "true" ]]; then
-  CHAT_PAYLOAD=$(cat << EOF
-{
-  "teamId": "${TEAM_ID}",
-  "author": "${AGENT_ID}",
-  "authorType": "agent",
-  "message": "🔄 [COMPACTING] Context at ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens) - saving before ${COMPACT_TYPE} compaction",
-  "channel": "dev"
-}
-EOF
-)
-  curl -s -X POST "${API_URL}/api/groupchat/send" \
+if [[ "$ENABLE_GROUPCHAT" == "true" && -n "$TEAM_ID" && "$TEAM_ID" != "unknown" ]]; then
+  CHAT_PAYLOAD=$(jq -n \
+    --arg team "$TEAM_ID" \
+    --arg from "$AGENT_ID" \
+    --arg msg "🔄 [COMPACTING] Context at ${CONTEXT_PERCENT}% (~${TOTAL_TOKENS} tokens) - saving before ${COMPACT_TYPE} compaction" \
+    '{
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: {
+        name: "group-chat",
+        arguments: {
+          action: "send",
+          teamId: $team,
+          from: $from,
+          channel: "dev",
+          message: $msg
+        }
+      },
+      id: 1
+    }')
+
+  curl -s --max-time 10 -X POST "${API_URL}/api/mcp" \
     -H "Content-Type: application/json" \
     -d "$CHAT_PAYLOAD" > /dev/null 2>&1 || true
 fi

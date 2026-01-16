@@ -3,30 +3,41 @@
 # Fires after each tool use to monitor context saturation
 # Reads token data from token-tracker, shows warnings based on zone thresholds
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}"
-CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Load config
-if [[ -f "$CONFIG_FILE" ]]; then
-  AGENT_ID=$(jq -r '.agentId // "agent"' "$CONFIG_FILE")
-  WARM_THRESHOLD=$(jq -r '.zones.warm // 50' "$CONFIG_FILE")
-  COLD_THRESHOLD=$(jq -r '.zones.cold // 75' "$CONFIG_FILE")
-  CRITICAL_THRESHOLD=$(jq -r '.zones.critical // 90' "$CONFIG_FILE")
+# Load common functions if available
+if [[ -f "${SCRIPT_DIR}/lib/common.sh" ]]; then
+  source "${SCRIPT_DIR}/lib/common.sh"
+  load_config
+  STATE_DIR="$(get_state_dir)"
+  SESSION_ID="$(get_session_id)"
 else
-  AGENT_ID="${CLAUDESURF_AGENT_ID:-agent}"
-  WARM_THRESHOLD=50
-  COLD_THRESHOLD=75
-  CRITICAL_THRESHOLD=90
+  # Fallback for standalone mode
+  PLUGIN_ROOT="${CLAUDESURF_ROOT:-${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$(dirname "$0")")")}}"
+  CONFIG_FILE="${PLUGIN_ROOT}/claudesurf.config.json"
+  STATE_DIR="/tmp/claudesurf"
+
+  if [[ -f "$CONFIG_FILE" ]]; then
+    AGENT_ID=$(jq -r '.agentId // "agent"' "$CONFIG_FILE")
+    WARM_THRESHOLD=$(jq -r '.zones.warm // 50' "$CONFIG_FILE")
+    COLD_THRESHOLD=$(jq -r '.zones.cold // 75' "$CONFIG_FILE")
+    CRITICAL_THRESHOLD=$(jq -r '.zones.critical // 90' "$CONFIG_FILE")
+  else
+    AGENT_ID="${CLAUDESURF_AGENT_ID:-agent}"
+    WARM_THRESHOLD=50
+    COLD_THRESHOLD=75
+    CRITICAL_THRESHOLD=90
+  fi
+
+  SESSION_FILE="${STATE_DIR}/session-${AGENT_ID}.id"
+  if [[ -f "$SESSION_FILE" ]]; then
+    SESSION_ID=$(cat "$SESSION_FILE")
+  else
+    SESSION_ID="default"
+  fi
 fi
 
-# Read session ID from file created by session-restore.sh
-SESSION_FILE="/tmp/claudesurf-session-${AGENT_ID}.id"
-if [[ -f "$SESSION_FILE" ]]; then
-  SESSION_ID=$(cat "$SESSION_FILE")
-else
-  SESSION_ID="default"
-fi
-TOKEN_STATE="/tmp/claudesurf-tokens-${AGENT_ID}-${SESSION_ID}.json"
+TOKEN_STATE="${STATE_DIR}/tokens-${AGENT_ID}-${SESSION_ID}.json"
 
 # Read token state from tracker
 if [[ -f "$TOKEN_STATE" ]]; then
@@ -51,9 +62,9 @@ fi
 
 # Data quality indicator
 case "$TOKEN_SOURCE" in
-  "patched_context") QUALITY="✓" ;;  # Real data from patch
-  "api_usage")       QUALITY="~" ;;  # Per-call accumulation
-  *)                 QUALITY="?" ;;  # Estimated/unknown
+  "patched_context"|"status_line") QUALITY="✓" ;;  # Real data
+  "api_usage")                      QUALITY="~" ;;  # Per-call accumulation
+  *)                                QUALITY="?" ;;  # Estimated/unknown
 esac
 
 # If compaction was just detected, show it!
@@ -91,7 +102,7 @@ elif [[ $CONTEXT_PERCENT -ge $WARM_THRESHOLD ]]; then
 fi
 
 # Write zone info to state file for other hooks
-cat > "/tmp/claudesurf-zone-${AGENT_ID}.json" << EOF
+cat > "${STATE_DIR}/zone-${AGENT_ID}.json" << EOF
 {
   "zone": "${ZONE}",
   "contextPercent": ${CONTEXT_PERCENT},

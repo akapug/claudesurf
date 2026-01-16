@@ -1,0 +1,78 @@
+{
+  "_comment": "Docker-compatible ClaudeSurf hooks. Uses CLAUDESURF_ROOT env var for paths.",
+  "_usage": "Set CLAUDESURF_ROOT=/opt/claudesurf in Dockerfile, or mount at /opt/claudesurf",
+  "_env_vars": {
+    "CLAUDESURF_ROOT": "Path to ClaudeSurf installation (default: /opt/claudesurf)",
+    "CLAUDESURF_AGENT_ID": "Agent identifier for state files and Glue reporting",
+    "CLAUDESURF_TEAM_ID": "Glue team ID for MCP calls",
+    "CLAUDESURF_API_URL": "Glue API URL (default: https://glue.elide.work)",
+    "CLAUDESURF_STATE_DIR": "State directory for persistence (default: /tmp/claudesurf)",
+    "CLAUDESURF_DEBUG": "Enable debug logging (default: false)"
+  },
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/session-restore.sh",
+          "timeout": 30
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/token-tracker.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/context-monitor.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/context-reporter.sh glue",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "PreCompact": [
+    {
+      "matcher": "auto",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/pre-compact-save.sh auto",
+          "timeout": 60
+        }
+      ]
+    },
+    {
+      "matcher": "manual",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/pre-compact-save.sh manual",
+          "timeout": 60
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDESURF_ROOT:-/opt/claudesurf}/hooks/scripts/session-checkpoint.sh",
+          "timeout": 30
+        }
+      ]
+    }
+  ]
+}
